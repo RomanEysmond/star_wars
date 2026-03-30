@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="CompilerConfiguration">
+    <bytecodeTargetLevel target="17">
+      <module name="StarWars.data" target="17" />
+      <module name="StarWars.di" target="17" />
+      <module name="StarWars.presentation" target="17" />
+      <module name="StarWars.starwarsapplication" target="17" />
+    </bytecodeTargetLevel>
+  </component>
+</project>
