@@ -1,12 +1,15 @@
 package com.example.starwars.presentation.ui.characterlist
 
 import android.os.Bundle
+import android.text.Editable
+import android.text.TextWatcher
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.EditText
+import android.widget.ImageView
 import android.widget.ProgressBar
 import android.widget.TextView
-import androidx.appcompat.widget.SearchView
 import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
@@ -22,7 +25,8 @@ class CharacterListFragment : Fragment() {
 
     private lateinit var recyclerView: RecyclerView
     private lateinit var swipeRefresh: SwipeRefreshLayout
-    private lateinit var searchView: SearchView
+    private lateinit var searchEditText: EditText
+    private lateinit var clearSearch: ImageView
     private lateinit var progressBar: ProgressBar
     private lateinit var emptyView: View
     private lateinit var errorView: View
@@ -49,12 +53,19 @@ class CharacterListFragment : Fragment() {
         observeViewModel()
 
         viewModel.loadCharacters()
+
+        // Настройка SwipeRefreshLayout цветов
+        swipeRefresh.setColorSchemeColors(
+            resources.getColor(R.color.star_wars_yellow, null),
+            resources.getColor(R.color.star_wars_white, null)
+        )
     }
 
     private fun initViews(view: View) {
         recyclerView = view.findViewById(R.id.recyclerView)
         swipeRefresh = view.findViewById(R.id.swipeRefresh)
-        searchView = view.findViewById(R.id.searchView)
+        searchEditText = view.findViewById(R.id.searchView)
+        clearSearch = view.findViewById(R.id.clearSearch)
         progressBar = view.findViewById(R.id.progressBar)
         emptyView = view.findViewById(R.id.emptyView)
         errorView = view.findViewById(R.id.errorView)
@@ -75,14 +86,20 @@ class CharacterListFragment : Fragment() {
     }
 
     private fun setupSearchView() {
-        searchView.setOnQueryTextListener(object : SearchView.OnQueryTextListener {
-            override fun onQueryTextSubmit(query: String?): Boolean = false
+        searchEditText.addTextChangedListener(object : TextWatcher {
+            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
 
-            override fun onQueryTextChange(newText: String?): Boolean {
-                viewModel.filterCharacters(newText.orEmpty())
-                return true
+            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
+                viewModel.filterCharacters(s.toString())
+                clearSearch.isVisible = !s.isNullOrEmpty()
             }
+
+            override fun afterTextChanged(s: Editable?) {}
         })
+
+        clearSearch.setOnClickListener {
+            searchEditText.text.clear()
+        }
     }
 
     private fun setupSwipeRefresh() {
@@ -125,6 +142,6 @@ class CharacterListFragment : Fragment() {
 
     override fun onDestroyView() {
         super.onDestroyView()
-        searchView.setOnQueryTextListener(null)
+        searchEditText.removeTextChangedListener(null)
     }
 }

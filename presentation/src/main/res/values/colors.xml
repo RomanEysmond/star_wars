@@ -1,5 +1,16 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <!-- Star Wars Colors -->
+    <color name="star_wars_yellow">#FFE81F</color>
+    <color name="star_wars_black">#000000</color>
+    <color name="star_wars_dark">#1A1A1A</color>
+    <color name="star_wars_gray">#2C2C2C</color>
+    <color name="star_wars_light_gray">#3A3A3A</color>
+    <color name="star_wars_white">#FFFFFF</color>
+    <color name="star_wars_red">#E63946</color>
+    <color name="star_wars_blue">#457B9D</color>
+
+    <!-- Original colors (keep for compatibility) -->
     <color name="purple_200">#FFBB86FC</color>
     <color name="purple_500">#FF6200EE</color>
     <color name="purple_700">#FF3700B3</color>

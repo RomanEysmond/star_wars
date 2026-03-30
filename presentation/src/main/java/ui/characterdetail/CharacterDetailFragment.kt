@@ -19,7 +19,6 @@ import dagger.hilt.android.AndroidEntryPoint
 @AndroidEntryPoint
 class CharacterDetailFragment : Fragment() {
 
-    private lateinit var toolbar: androidx.appcompat.widget.Toolbar
     private lateinit var contentLayout: LinearLayout
     private lateinit var progressBar: ProgressBar
     private lateinit var errorView: View
@@ -56,16 +55,13 @@ class CharacterDetailFragment : Fragment() {
         super.onViewCreated(view, savedInstanceState)
 
         initViews(view)
-        setupToolbar()
         observeViewModel()
 
-        // Получаем characterId из аргументов
         val characterId = arguments?.getInt("characterId") ?: 0
         viewModel.loadCharacterDetails(characterId)
     }
 
     private fun initViews(view: View) {
-        toolbar = view.findViewById(R.id.toolbar)
         contentLayout = view.findViewById(R.id.contentLayout)
         progressBar = view.findViewById(R.id.progressBar)
         errorView = view.findViewById(R.id.errorView)
@@ -91,12 +87,6 @@ class CharacterDetailFragment : Fragment() {
         retryButton.setOnClickListener {
             val characterId = arguments?.getInt("characterId") ?: 0
             viewModel.loadCharacterDetails(characterId)
-        }
-    }
-
-    private fun setupToolbar() {
-        toolbar.setNavigationOnClickListener {
-            findNavController().navigateUp()
         }
     }
 
@@ -130,18 +120,18 @@ class CharacterDetailFragment : Fragment() {
     }
 
     private fun bindCharacterData(character: Character) {
-        characterName.text = character.name
-        "${character.height} cm".also { heightValue.text = it }
-        "${character.mass} kg".also { massValue.text = it }
-        hairValue.text = character.hairColor.ifEmpty { "n/a" }
-        eyesValue.text = character.eyeColor.ifEmpty { "n/a" }
+        characterName.text = character.name.uppercase()
+        heightValue.text = "${character.height} cm"
+        massValue.text = "${character.mass} kg"
+        hairValue.text = character.hairColor.ifEmpty { "N/A" }
+        eyesValue.text = character.eyeColor.ifEmpty { "N/A" }
         birthYearValue.text = character.birthYear
-        genderValue.text = character.gender
+        genderValue.text = character.gender.uppercase()
 
         character.homeworld?.let { planet ->
-            homeworldName.text = planet.name
-            homeworldClimate.text = planet.climate
-            homeworldTerrain.text = planet.terrain
+            homeworldName.text = planet.name.uppercase()
+            homeworldClimate.text = planet.climate.uppercase()
+            homeworldTerrain.text = planet.terrain.uppercase()
             homeworldPopulation.text = planet.population
             homeworldCard.isVisible = true
             noHomeworldText.isVisible = false
@@ -152,7 +142,7 @@ class CharacterDetailFragment : Fragment() {
 
         if (character.films.isNotEmpty()) {
             filmsContainer.isVisible = true
-            "Appears in ${character.films.size} movies".also { filmsList.text = it }
+            filmsList.text = "Appears in ${character.films.size} movies"
         } else {
             filmsContainer.isVisible = false
         }
