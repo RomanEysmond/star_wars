@@ -1,10 +1,13 @@
 package com.example.starwars.presentation.ui.characterdetail
 
 import android.os.Bundle
-import android.util.Log
+import android.os.Handler
+import android.os.Looper
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.view.animation.AlphaAnimation
+import android.view.animation.Animation
 import android.widget.Button
 import android.widget.LinearLayout
 import android.widget.ProgressBar
@@ -12,19 +15,22 @@ import android.widget.TextView
 import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
-import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.example.starwars.domain.models.Character
 import com.example.starwars.presentation.R
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.*
 
 @AndroidEntryPoint
 class CharacterDetailFragment : Fragment() {
 
     // Views
     private lateinit var contentLayout: LinearLayout
+    private lateinit var loadingContainer: LinearLayout
     private lateinit var progressBar: ProgressBar
+    private lateinit var loadingPhraseText: TextView
+    private lateinit var loadingInfoText: TextView
     private lateinit var errorView: View
     private lateinit var errorText: TextView
     private lateinit var retryButton: Button
@@ -48,8 +54,23 @@ class CharacterDetailFragment : Fragment() {
     private lateinit var emptyFilmsText: TextView
 
     private lateinit var filmAdapter: FilmAdapter
-
     private val viewModel: CharacterDetailViewModel by viewModels()
+
+    // Для анимации фраз
+    private val starWarsPhrases = listOf(
+        "СКАНИРОВАНИЕ ОКРУЖАЮЩЕГО ПРОСТРАНСТВА...",
+        "ЗАТОЧКА СВЕТОВОГО МЕЧА...",
+        "НАСТРОЙКА СИНХРОНИЗАТОРА...",
+        "ПОИСК ИСТОЧНИКОВ СИЛЫ...",
+        "СБОР РАЗВЕДДАННЫХ...",
+        "ДЕШИФРОВКА СООБЩЕНИЯ ПОВСТАНЦЕВ...",
+        "СКАНИРОВАНИЕ ОКРУЖАЮЩЕГО ПРОСТРАНСТВА...",
+        "ЗАГРУЗКА БОЕВЫХ ПРОТОКОЛОВ..."
+    )
+
+    private var phraseIndex = 0
+    private var handler = Handler(Looper.getMainLooper())
+    private var phraseRunnable: Runnable? = null
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -71,12 +92,22 @@ class CharacterDetailFragment : Fragment() {
         viewModel.loadCharacterDetails(characterId)
     }
 
+    override fun onDestroyView() {
+        super.onDestroyView()
+        // Останавливаем анимацию фраз при уничтожении фрагмента
+        stopPhraseAnimation()
+    }
+
     private fun initViews(view: View) {
         contentLayout = view.findViewById(R.id.contentLayout)
+        loadingContainer = view.findViewById(R.id.loadingContainer)
         progressBar = view.findViewById(R.id.progressBar)
+        loadingPhraseText = view.findViewById(R.id.loadingPhraseText)
+        loadingInfoText = view.findViewById(R.id.loadingInfoText)
         errorView = view.findViewById(R.id.errorView)
         errorText = view.findViewById(R.id.errorText)
         retryButton = view.findViewById(R.id.retryButton)
+
         characterName = view.findViewById(R.id.characterName)
         heightValue = view.findViewById(R.id.heightValue)
         massValue = view.findViewById(R.id.massValue)
@@ -111,12 +142,11 @@ class CharacterDetailFragment : Fragment() {
     }
 
     private fun observeViewModel() {
-        // Наблюдаем за основным состоянием загрузки (показываем на весь экран)
+        // Наблюдаем за основным состоянием загрузки
         viewModel.isLoading.observe(viewLifecycleOwner) { isLoading ->
-            if (isLoading == true) {
-                showFullScreenLoading()
-            } else {
-                hideFullScreenLoading()
+            when (isLoading) {
+                true -> showFullScreenLoading()
+                false -> hideFullScreenLoading()
             }
         }
 
@@ -127,7 +157,7 @@ class CharacterDetailFragment : Fragment() {
             }
         }
 
-        // Наблюдаем за загрузкой фильмов (только индикатор внутри карточки)
+        // Наблюдаем за загрузкой фильмов
         viewModel.isFilmsLoading.observe(viewLifecycleOwner) { isLoading ->
             if (isLoading == true) {
                 showFilmsLoading()
@@ -155,48 +185,90 @@ class CharacterDetailFragment : Fragment() {
         }
     }
 
-    // Методы управления состояниями UI
-
     /**
-     * Показывает полноэкранный прогресс-бар во время загрузки ВСЕХ данных
+     * Запускает анимацию смены фраз
      */
-    private fun showFullScreenLoading() {
-        progressBar.isVisible = true      // Большой прогресс-бар на весь экран
-        contentLayout.isVisible = false   // Скрываем весь контент
-        errorView.isVisible = false       // Скрываем ошибку
+    private fun startPhraseAnimation() {
+        phraseIndex = 0
+        loadingPhraseText.text = starWarsPhrases[phraseIndex]
+
+        // Анимация появления/исчезновения текста
+        phraseRunnable = object : Runnable {
+            override fun run() {
+                // Анимация исчезновения
+                val fadeOut = AlphaAnimation(1f, 0f).apply {
+                    duration = 500
+                }
+
+                // Анимация появления
+                val fadeIn = AlphaAnimation(0f, 1f).apply {
+                    duration = 500
+                }
+
+                fadeOut.setAnimationListener(object : Animation.AnimationListener {
+                    override fun onAnimationStart(animation: Animation) {}
+                    override fun onAnimationRepeat(animation: Animation) {}
+                    override fun onAnimationEnd(animation: Animation) {
+                        // Меняем фразу
+                        phraseIndex = (phraseIndex + 1) % starWarsPhrases.size
+                        loadingPhraseText.text = starWarsPhrases[phraseIndex]
+                        loadingPhraseText.startAnimation(fadeIn)
+                    }
+                })
+
+                loadingPhraseText.startAnimation(fadeOut)
+
+                // Запускаем следующую смену через 3 секунды
+                handler.postDelayed(this, 3500)
+            }
+        }
+
+        handler.post(phraseRunnable!!)
     }
 
     /**
-     * Скрывает полноэкранный прогресс-бар после полной загрузки
+     * Останавливает анимацию смены фраз
      */
+    private fun stopPhraseAnimation() {
+        phraseRunnable?.let {
+            handler.removeCallbacks(it)
+        }
+        phraseRunnable = null
+    }
+
+    // Методы управления состояниями UI
+
+    private fun showFullScreenLoading() {
+        loadingContainer.isVisible = true
+        contentLayout.isVisible = false
+        errorView.isVisible = false
+        startPhraseAnimation()  // Запускаем анимацию фраз
+    }
+
     private fun hideFullScreenLoading() {
-        progressBar.isVisible = false
+        loadingContainer.isVisible = false
         contentLayout.isVisible = true
+        stopPhraseAnimation()   // Останавливаем анимацию фраз
     }
 
     private fun showError(error: String) {
-        progressBar.isVisible = false
+        loadingContainer.isVisible = false
         contentLayout.isVisible = false
         errorView.isVisible = true
         errorText.text = error
+        stopPhraseAnimation()
     }
 
     private fun hideError() {
         errorView.isVisible = false
     }
 
-    /**
-     * Показывает маленький прогресс-бар внутри карточки фильмов
-     */
     private fun showFilmsLoading() {
         filmsProgressBar.isVisible = true
         filmsRecyclerView.isVisible = false
         emptyFilmsText.isVisible = false
     }
 
-    /**
-     * Скрывает маленький прогресс-бар внутри карточки фильмов
-     */
     private fun hideFilmsLoading() {
         filmsProgressBar.isVisible = false
     }

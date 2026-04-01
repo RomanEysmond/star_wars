@@ -1,13 +1,18 @@
 package com.example.starwars.presentation.ui.characterlist
 
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.text.Editable
 import android.text.TextWatcher
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.view.animation.AlphaAnimation
+import android.view.animation.Animation
 import android.widget.EditText
 import android.widget.ImageView
+import android.widget.LinearLayout
 import android.widget.ProgressBar
 import android.widget.TextView
 import androidx.core.view.isVisible
@@ -28,12 +33,31 @@ class CharacterListFragment : Fragment() {
     private lateinit var searchEditText: EditText
     private lateinit var clearSearch: ImageView
     private lateinit var progressBar: ProgressBar
+    private lateinit var loadingContainer: LinearLayout
+    private lateinit var loadingPhraseText: TextView
+    private lateinit var loadingInfoText: TextView
     private lateinit var emptyView: View
     private lateinit var errorView: View
     private lateinit var errorText: TextView
 
     private val viewModel: CharacterListViewModel by viewModels()
     private lateinit var adapter: CharacterAdapter
+
+    // Русские фразы из Star Wars
+    private val starWarsPhrases = listOf(
+        "СКАНИРОВАНИЕ ОКРУЖАЮЩЕГО ПРОСТРАНСТВА...",
+        "ЗАТОЧКА СВЕТОВОГО МЕЧА...",
+        "НАСТРОЙКА СИНХРОНИЗАТОРА...",
+        "ПОИСК ИСТОЧНИКОВ СИЛЫ...",
+        "СБОР РАЗВЕДДАННЫХ...",
+        "ДЕШИФРОВКА СООБЩЕНИЯ ПОВСТАНЦЕВ...",
+        "СКАНИРОВАНИЕ ОКРУЖАЮЩЕГО ПРОСТРАНСТВА...",
+        "ЗАГРУЗКА БОЕВЫХ ПРОТОКОЛОВ..."
+    )
+
+    private var phraseIndex = 0
+    private var handler = Handler(Looper.getMainLooper())
+    private var phraseRunnable: Runnable? = null
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -62,12 +86,22 @@ class CharacterListFragment : Fragment() {
         )
     }
 
+    override fun onDestroyView() {
+        super.onDestroyView()
+        stopPhraseAnimation()
+        handler.removeCallbacksAndMessages(null)
+        searchEditText.removeTextChangedListener(null)
+    }
+
     private fun initViews(view: View) {
         recyclerView = view.findViewById(R.id.recyclerView)
         swipeRefresh = view.findViewById(R.id.swipeRefresh)
         searchEditText = view.findViewById(R.id.searchView)
         clearSearch = view.findViewById(R.id.clearSearch)
         progressBar = view.findViewById(R.id.progressBar)
+        loadingContainer = view.findViewById(R.id.loadingContainer)
+        loadingPhraseText = view.findViewById(R.id.loadingPhraseText)
+        loadingInfoText = view.findViewById(R.id.loadingInfoText)
         emptyView = view.findViewById(R.id.emptyView)
         errorView = view.findViewById(R.id.errorView)
         errorText = view.findViewById(R.id.errorText)
@@ -109,6 +143,46 @@ class CharacterListFragment : Fragment() {
         }
     }
 
+    /**
+     * Запускает анимацию смены фраз
+     */
+    private fun startPhraseAnimation() {
+        phraseIndex = 0
+        loadingPhraseText.text = starWarsPhrases[phraseIndex]
+
+        phraseRunnable = object : Runnable {
+            override fun run() {
+                val fadeOut = AlphaAnimation(1f, 0f).apply { duration = 500 }
+                val fadeIn = AlphaAnimation(0f, 1f).apply { duration = 500 }
+
+                fadeOut.setAnimationListener(object : Animation.AnimationListener {
+                    override fun onAnimationStart(animation: Animation) {}
+                    override fun onAnimationRepeat(animation: Animation) {}
+                    override fun onAnimationEnd(animation: Animation) {
+                        phraseIndex = (phraseIndex + 1) % starWarsPhrases.size
+                        loadingPhraseText.text = starWarsPhrases[phraseIndex]
+                        loadingPhraseText.startAnimation(fadeIn)
+                    }
+                })
+
+                loadingPhraseText.startAnimation(fadeOut)
+                handler.postDelayed(this, 3500)
+            }
+        }
+
+        handler.post(phraseRunnable!!)
+    }
+
+    /**
+     * Останавливает анимацию смены фраз
+     */
+    private fun stopPhraseAnimation() {
+        phraseRunnable?.let {
+            handler.removeCallbacks(it)
+        }
+        phraseRunnable = null
+    }
+
     private fun observeViewModel() {
         viewModel.filteredCharacters.observe(viewLifecycleOwner) { characters ->
             adapter.submitList(characters)
@@ -116,46 +190,85 @@ class CharacterListFragment : Fragment() {
             if (characters.isEmpty() && viewModel.isLoading.value != true) {
                 emptyView.isVisible = true
                 recyclerView.isVisible = false
-            } else {
+            } else if (characters.isNotEmpty()) {
                 emptyView.isVisible = false
                 recyclerView.isVisible = true
             }
         }
 
         viewModel.isLoading.observe(viewLifecycleOwner) { isLoading ->
-            // Показываем прогресс только если данные не загружены и нет списка
-            if (isLoading == true) {
-                // Проверяем, есть ли уже данные
-                if (adapter.currentList.isEmpty()) {
-                    progressBar.isVisible = true
-                    recyclerView.isVisible = false
-                } else {
-                    // Если данные уже есть, скрываем прогресс
-                    progressBar.isVisible = false
+            when (isLoading) {
+                true -> {
+                    // Проверяем, есть ли уже данные
+                    if (adapter.currentList.isEmpty()) {
+                        // Первая загрузка - показываем полноэкранный прогресс с фразами
+                        showFullScreenLoading()
+                    } else {
+                        // Обновление данных - показываем SwipeRefresh
+                        swipeRefresh.isRefreshing = true
+                        hideFullScreenLoading()
+                    }
                 }
-                swipeRefresh.isRefreshing = false
-            } else {
-                progressBar.isVisible = false
-                swipeRefresh.isRefreshing = false
-                // Если данные загружены, показываем список
-                if (adapter.currentList.isNotEmpty()) {
-                    recyclerView.isVisible = true
+                false -> {
+                    // Загрузка завершена
+                    hideFullScreenLoading()
+                    swipeRefresh.isRefreshing = false
+
+                    // Если данные загружены, показываем список
+                    if (adapter.currentList.isNotEmpty()) {
+                        recyclerView.isVisible = true
+                    }
                 }
             }
         }
 
         viewModel.errorMessage.observe(viewLifecycleOwner) { error ->
             if (error != null && adapter.currentList.isEmpty()) {
-                errorView.isVisible = true
-                errorText.text = error
+                showError(error)
             } else {
-                errorView.isVisible = false
+                hideError()
             }
         }
     }
 
-    override fun onDestroyView() {
-        super.onDestroyView()
-        searchEditText.removeTextChangedListener(null)
+    /**
+     * Показывает полноэкранную загрузку с фразами
+     */
+    private fun showFullScreenLoading() {
+        loadingContainer.isVisible = true
+        progressBar.isVisible = false  // Скрываем старый прогресс-бар
+        recyclerView.isVisible = false
+        emptyView.isVisible = false
+        errorView.isVisible = false
+        startPhraseAnimation()
+    }
+
+    /**
+     * Скрывает полноэкранную загрузку
+     */
+    private fun hideFullScreenLoading() {
+        loadingContainer.isVisible = false
+        progressBar.isVisible = false
+        stopPhraseAnimation()
+    }
+
+    /**
+     * Показывает сообщение об ошибке
+     */
+    private fun showError(error: String) {
+        loadingContainer.isVisible = false
+        progressBar.isVisible = false
+        recyclerView.isVisible = false
+        emptyView.isVisible = false
+        errorView.isVisible = true
+        errorText.text = error
+        stopPhraseAnimation()
+    }
+
+    /**
+     * Скрывает сообщение об ошибке
+     */
+    private fun hideError() {
+        errorView.isVisible = false
     }
 }

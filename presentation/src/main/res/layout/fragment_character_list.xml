@@ -128,17 +128,53 @@
 
     </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
 
-    <ProgressBar
-        android:id="@+id/progressBar"
-        style="?android:attr/progressBarStyleLarge"
+    <!-- Контейнер для прогресс-бара и фраз (по центру) -->
+    <LinearLayout
+        android:id="@+id/loadingContainer"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:gravity="center"
         android:visibility="gone"
-        android:indeterminateTint="@color/star_wars_yellow"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
+        app:layout_constraintTop_toTopOf="parent">
+
+        <ProgressBar
+            android:id="@+id/progressBar"
+            style="?android:attr/progressBarStyleLarge"
+            android:layout_width="80dp"
+            android:layout_height="80dp"
+            android:indeterminateTint="@color/star_wars_yellow" />
+
+        <TextView
+            android:id="@+id/loadingPhraseText"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="32dp"
+            android:text="ДА ПРИБУДЕТ С ТОБОЙ СИЛА"
+            android:textColor="@color/star_wars_yellow"
+            android:textSize="18sp"
+            android:textStyle="bold"
+            android:fontFamily="monospace"
+            android:gravity="center"
+            android:letterSpacing="0.1"
+            android:paddingHorizontal="24dp" />
+
+        <TextView
+            android:id="@+id/loadingInfoText"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:text="Не беспокойтесь, долгая будет лишь первая загрузка"
+            android:textColor="@color/star_wars_light_gray"
+            android:textSize="12sp"
+            android:fontFamily="monospace"
+            android:gravity="center"
+            android:paddingHorizontal="24dp" />
+
+    </LinearLayout>
 
     <LinearLayout
         android:id="@+id/emptyView"
