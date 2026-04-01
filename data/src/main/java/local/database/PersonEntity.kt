@@ -20,12 +20,3 @@ data class PersonEntity(
     val lastUpdated: Long = System.currentTimeMillis()
 )
 
-@Entity(tableName = "planets")
-data class PlanetEntity(
-    @PrimaryKey
-    val id: Int,
-    val name: String,
-    val climate: String,
-    val terrain: String,
-    val population: String
-)

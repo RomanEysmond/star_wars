@@ -26,7 +26,7 @@
             android:layout_marginBottom="8dp"
             android:background="@color/star_wars_yellow" />
 
-        <!-- Character Name with Star Wars style -->
+        <!-- Character Name -->
         <TextView
             android:id="@+id/nameText"
             android:layout_width="match_parent"

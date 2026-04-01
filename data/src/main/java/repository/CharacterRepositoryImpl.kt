@@ -1,14 +1,20 @@
 package com.example.starwars.data.repository
 
+import android.util.Log
 import com.example.starwars.data.local.database.AppDatabase
+import com.example.starwars.data.local.database.FilmEntity
 import com.example.starwars.data.local.database.PersonEntity
 import com.example.starwars.data.local.database.PlanetEntity
 import com.example.starwars.data.remote.api.StarWarsApi
 import com.example.starwars.domain.models.Character
+import com.example.starwars.domain.models.Film
 import com.example.starwars.domain.models.Planet
 import com.example.starwars.domain.repository.CharacterRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.coroutineScope
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -17,6 +23,10 @@ class CharacterRepositoryImpl @Inject constructor(
     private val api: StarWarsApi,
     private val database: AppDatabase
 ) : CharacterRepository {
+
+    companion object {
+        private const val TAG = "CharacterRepository"
+    }
 
     override fun getAllCharacters(): Flow<List<Character>> {
         return database.personDao().getAllPersons().map { entities ->
@@ -55,38 +65,186 @@ class CharacterRepositoryImpl @Inject constructor(
         return try {
             val personEntity = database.personDao().getPersonById(characterId)
             if (personEntity != null) {
-                val planet = if (personEntity.homeworldId > 0) {
-                    database.planetDao().getPlanetById(personEntity.homeworldId)?.toDomain()
-                } else null
-                val character = personEntity.toDomain().copy(homeworld = planet)
+                Log.d(TAG, "Loading character from cache: $characterId")
+
+                // Загружаем данные из кеша
+                val character = loadCharacterFromCache(personEntity)
                 Result.success(character)
             } else {
-                val response = api.getPersonDetails(characterId)
-                val planetEntity = fetchAndCachePlanet(extractIdFromUrl(response.homeworld))
-                val character = Character(
-                    id = characterId,
-                    name = response.name,
-                    height = response.height,
-                    mass = response.mass,
-                    hairColor = response.hair_color,
-                    eyeColor = response.eye_color,
-                    birthYear = response.birth_year,
-                    gender = response.gender,
-                    homeworld = planetEntity?.toDomain(),
-                    films = response.films.map { extractIdFromUrl(it) }
-                )
+                Log.d(TAG, "Loading character from API: $characterId")
+
+                // Загружаем из API с параллельными запросами
+                val character = loadCharacterFromApi(characterId)
+
+                // Сохраняем в кеш
                 cacheCharacter(character)
+
                 Result.success(character)
             }
         } catch (e: Exception) {
+            Log.e(TAG, "Error loading character: ${e.message}", e)
             e.printStackTrace()
             Result.failure(e)
         }
     }
 
+    /**
+     * Загрузка персонажа из кеша с подгрузкой связанных данных
+     */
+    private suspend fun loadCharacterFromCache(personEntity: PersonEntity): Character {
+        // 1. Загружаем планету из кеша (или API, если нет)
+        val planet = if (personEntity.homeworldId > 0) {
+            database.planetDao().getPlanetById(personEntity.homeworldId)?.toDomain()
+                ?: fetchAndCachePlanet(personEntity.homeworldId)?.toDomain()
+        } else null
+
+        // 2. Получаем ID фильмов из строки
+        val filmIdentifiers = if (personEntity.films.isNotEmpty()) {
+            personEntity.films.split(",").filter { it.isNotEmpty() }
+        } else {
+            emptyList()
+        }
+
+        Log.d(TAG, "Film identifiers from cache: $filmIdentifiers")
+
+        // 3. Загружаем фильмы из кеша или API
+        val films = loadFilmsWithCache(filmIdentifiers)
+
+        return Character(
+            id = personEntity.id,
+            name = personEntity.name,
+            height = personEntity.height,
+            mass = personEntity.mass,
+            hairColor = personEntity.hairColor,
+            eyeColor = personEntity.eyeColor,
+            birthYear = personEntity.birthYear,
+            gender = personEntity.gender,
+            homeworld = planet,
+            films = films
+        )
+    }
+
+    /**
+     * Загрузка персонажа из API с ПАРАЛЛЕЛЬНЫМИ запросами для связанных данных
+     */
+    private suspend fun loadCharacterFromApi(characterId: Int): Character = coroutineScope {
+        Log.d(TAG, "Loading character $characterId from API with parallel requests")
+
+        // Основной запрос персонажа
+        val characterResponse = api.getPersonDetails(characterId)
+
+        // ПАРАЛЛЕЛЬНО загружаем все связанные данные
+        val homeworldDeferred = async {
+            fetchAndCachePlanet(extractIdFromUrl(characterResponse.homeworld))
+        }
+
+        val filmsDeferred = async {
+            // Параллельно загружаем все фильмы
+            val filmIdentifiers = characterResponse.films
+            Log.d(TAG, "Film URLs from API: $filmIdentifiers")
+
+            if (filmIdentifiers.isNotEmpty()) {
+                // Загружаем фильмы параллельно
+                filmIdentifiers.map { filmUrl ->
+                    async {
+                        val filmId = extractIdFromUrl(filmUrl)
+                        fetchAndCacheFilm(filmId)
+                    }
+                }.awaitAll().map { it.toDomain() }
+            } else {
+                emptyList()
+            }
+        }
+
+        // Ждем результаты всех параллельных запросов
+        val planet = homeworldDeferred.await()
+        val films = filmsDeferred.await()
+
+        Log.d(TAG, "Loaded character $characterId with planet: ${planet?.name}, films: ${films.size}")
+
+        Character(
+            id = characterId,
+            name = characterResponse.name,
+            height = characterResponse.height,
+            mass = characterResponse.mass,
+            hairColor = characterResponse.hair_color,
+            eyeColor = characterResponse.eye_color,
+            birthYear = characterResponse.birth_year,
+            gender = characterResponse.gender,
+            homeworld = planet?.toDomain(),
+            films = films
+        )
+    }
+
+    /**
+     * Загрузка фильма из API и сохранение в кеш
+     */
+    private suspend fun fetchAndCacheFilm(filmId: Int): FilmEntity {
+        Log.d(TAG, "Fetching film $filmId from API")
+        val response = api.getFilm(filmId)
+        val entity = FilmEntity(
+            id = filmId,
+            title = response.title,
+            episodeId = response.episode_id,
+            releaseDate = response.release_date,
+            director = response.director
+        )
+        database.filmDao().insertFilm(entity)
+        return entity
+    }
+
+    /**
+     * Универсальный метод: принимает List<String> (могут быть как ID в виде строк, так и URL)
+     */
+    private suspend fun loadFilmsWithCache(filmIdentifiers: List<String>): List<Film> {
+        if (filmIdentifiers.isEmpty()) return emptyList()
+
+        // Преобразуем идентификаторы в ID (числа)
+        val filmIds = filmIdentifiers.map { identifier ->
+            identifier.toIntOrNull() ?: extractIdFromUrl(identifier)
+        }
+
+        Log.d(TAG, "Resolved film IDs: $filmIds")
+
+        val cachedFilms = filmIds.mapNotNull { id ->
+            database.filmDao().getFilmById(id)?.toDomain()
+        }
+
+        Log.d(TAG, "Cached films: ${cachedFilms.size} of ${filmIds.size}")
+
+        // Если все фильмы уже в кеше – возвращаем их
+        if (cachedFilms.size == filmIds.size) {
+            return cachedFilms.sortedBy { it.episodeId }
+        }
+
+        // Иначе догружаем недостающие из API параллельно
+        val missingIds = filmIds.filter { id ->
+            database.filmDao().getFilmById(id) == null
+        }
+
+        Log.d(TAG, "Missing film IDs: $missingIds")
+
+        val newFilms = missingIds.map { id ->
+            try {
+                fetchAndCacheFilm(id).toDomain()
+            } catch (e: Exception) {
+                Log.e(TAG, "Error loading film $id: ${e.message}", e)
+                Film(id, "Unknown Film", 0, "Unknown", "Unknown")
+            }
+        }
+
+        return (cachedFilms + newFilms).sortedBy { it.episodeId }
+    }
+
+    /**
+     * Загрузка планеты из API и сохранение в кеш
+     */
     private suspend fun fetchAndCachePlanet(planetId: Int): PlanetEntity? {
         return try {
+            Log.d(TAG, "Fetching planet $planetId from API")
             val response = api.getPlanet(planetId)
+            Log.d(TAG, "Planet response: ${response.name}")
+
             val planetEntity = PlanetEntity(
                 id = planetId,
                 name = response.name,
@@ -97,10 +255,14 @@ class CharacterRepositoryImpl @Inject constructor(
             database.planetDao().insertPlanet(planetEntity)
             planetEntity
         } catch (e: Exception) {
+            Log.e(TAG, "Error fetching planet $planetId: ${e.message}", e)
             null
         }
     }
 
+    /**
+     * Сохранение персонажа в кеш
+     */
     private suspend fun cacheCharacter(character: Character) {
         val entity = PersonEntity(
             id = character.id,
@@ -112,16 +274,35 @@ class CharacterRepositoryImpl @Inject constructor(
             birthYear = character.birthYear,
             gender = character.gender,
             homeworldId = character.homeworld?.id ?: 0,
-            films = character.films.joinToString(","),
+            films = character.films.joinToString(",") { it.id.toString() },
             species = ""
         )
         database.personDao().insertPerson(entity)
+
+        // Также сохраняем фильмы в кеш, если их нет
+        character.films.forEach { film ->
+            if (database.filmDao().getFilmById(film.id) == null) {
+                database.filmDao().insertFilm(
+                    FilmEntity(
+                        id = film.id,
+                        title = film.title,
+                        episodeId = film.episodeId,
+                        releaseDate = film.releaseDate,
+                        director = film.director
+                    )
+                )
+            }
+        }
     }
 
+    /**
+     * Извлечение ID из URL
+     */
     private fun extractIdFromUrl(url: String): Int {
         return try {
             url.trimEnd('/').split("/").last().toInt()
         } catch (e: Exception) {
+            Log.e(TAG, "Error extracting ID from URL: $url", e)
             0
         }
     }
@@ -137,7 +318,7 @@ class CharacterRepositoryImpl @Inject constructor(
             birthYear = birthYear,
             gender = gender,
             homeworld = null,
-            films = films.split(",").filter { it.isNotEmpty() }.map { it.toIntOrNull() ?: 0 }
+            films = emptyList()
         )
     }
 
@@ -148,6 +329,16 @@ class CharacterRepositoryImpl @Inject constructor(
             climate = climate,
             terrain = terrain,
             population = population
+        )
+    }
+
+    private fun FilmEntity.toDomain(): Film {
+        return Film(
+            id = id,
+            title = title,
+            episodeId = episodeId,
+            releaseDate = releaseDate,
+            director = director
         )
     }
 }

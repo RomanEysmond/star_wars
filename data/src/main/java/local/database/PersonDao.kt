@@ -27,11 +27,3 @@ interface PersonDao {
     suspend fun getCount(): Int
 }
 
-@Dao
-interface PlanetDao {
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun insertPlanet(planet: PlanetEntity)
-
-    @Query("SELECT * FROM planets WHERE id = :planetId")
-    suspend fun getPlanetById(planetId: Int): PlanetEntity?
-}

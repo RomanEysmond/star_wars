@@ -12,6 +12,8 @@ import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.navigation.fragment.findNavController
+import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
 import com.example.starwars.domain.models.Character
 import com.example.starwars.presentation.R
 import dagger.hilt.android.AndroidEntryPoint
@@ -39,7 +41,11 @@ class CharacterDetailFragment : Fragment() {
     private lateinit var homeworldPopulation: TextView
     private lateinit var noHomeworldText: TextView
     private lateinit var filmsContainer: View
-    private lateinit var filmsList: TextView
+    private lateinit var filmsRecyclerView: RecyclerView
+    private lateinit var filmsProgressBar: ProgressBar
+    private lateinit var emptyFilmsText: TextView
+
+    private lateinit var filmAdapter: FilmAdapter
 
     private val viewModel: CharacterDetailViewModel by viewModels()
 
@@ -55,6 +61,7 @@ class CharacterDetailFragment : Fragment() {
         super.onViewCreated(view, savedInstanceState)
 
         initViews(view)
+        setupRecyclerView()
         observeViewModel()
 
         val characterId = arguments?.getInt("characterId") ?: 0
@@ -82,11 +89,25 @@ class CharacterDetailFragment : Fragment() {
         homeworldPopulation = view.findViewById(R.id.homeworldPopulation)
         noHomeworldText = view.findViewById(R.id.noHomeworldText)
         filmsContainer = view.findViewById(R.id.filmsContainer)
-        filmsList = view.findViewById(R.id.filmsList)
+        filmsRecyclerView = view.findViewById(R.id.filmsRecyclerView)
+        filmsProgressBar = view.findViewById(R.id.filmsProgressBar)
+        emptyFilmsText = view.findViewById(R.id.emptyFilmsText)
 
         retryButton.setOnClickListener {
             val characterId = arguments?.getInt("characterId") ?: 0
             viewModel.loadCharacterDetails(characterId)
+        }
+
+        // Показываем прогресс загрузки фильмов с самого начала
+        showFilmsLoading()
+    }
+
+    private fun setupRecyclerView() {
+        filmAdapter = FilmAdapter()
+        filmsRecyclerView.apply {
+            layoutManager = LinearLayoutManager(requireContext())
+            adapter = filmAdapter
+            setHasFixedSize(true)
         }
     }
 
@@ -108,6 +129,25 @@ class CharacterDetailFragment : Fragment() {
             }
         }
 
+        // Наблюдаем за загрузкой фильмов
+        viewModel.isFilmsLoading.observe(viewLifecycleOwner) { isLoading ->
+            if (isLoading == true) {
+                showFilmsLoading()
+            } else {
+                // Загрузка завершена, скрываем прогресс
+                filmsProgressBar.isVisible = false
+            }
+        }
+
+        // Наблюдаем за списком фильмов
+        viewModel.films.observe(viewLifecycleOwner) { films ->
+            if (films.isNotEmpty()) {
+                showFilmsList(films)
+            } else if (viewModel.isFilmsLoading.value == false) {
+                showEmptyFilms()
+            }
+        }
+
         viewModel.errorMessage.observe(viewLifecycleOwner) { error ->
             if (error != null) {
                 errorView.isVisible = true
@@ -117,6 +157,29 @@ class CharacterDetailFragment : Fragment() {
                 errorView.isVisible = false
             }
         }
+    }
+
+    private fun showFilmsLoading() {
+        // Показываем ProgressBar, скрываем список и сообщение об отсутствии фильмов
+        filmsContainer.isVisible = true
+        filmsProgressBar.isVisible = true
+        filmsRecyclerView.isVisible = false
+        emptyFilmsText.isVisible = false
+    }
+
+    private fun showFilmsList(films: List<com.example.starwars.domain.models.Film>) {
+        // Показываем список фильмов, скрываем ProgressBar
+        filmsProgressBar.isVisible = false
+        filmsRecyclerView.isVisible = true
+        emptyFilmsText.isVisible = false
+        filmAdapter.submitList(films)
+    }
+
+    private fun showEmptyFilms() {
+        // Показываем сообщение об отсутствии фильмов
+        filmsProgressBar.isVisible = false
+        filmsRecyclerView.isVisible = false
+        emptyFilmsText.isVisible = true
     }
 
     private fun bindCharacterData(character: Character) {
@@ -140,11 +203,7 @@ class CharacterDetailFragment : Fragment() {
             noHomeworldText.isVisible = true
         }
 
-        if (character.films.isNotEmpty()) {
-            filmsContainer.isVisible = true
-            filmsList.text = "Appears in ${character.films.size} movies"
-        } else {
-            filmsContainer.isVisible = false
-        }
+        // Не обновляем здесь список фильмов, так как он обновляется через LiveData
+        // Это предотвращает мигание ProgressBar
     }
 }

@@ -13,3 +13,18 @@ data class Character(
     val films: List<Film>
 )
 
+data class Planet(
+    val id: Int,
+    val name: String,
+    val climate: String,
+    val terrain: String,
+    val population: String
+)
+
+data class Film(
+    val id: Int,
+    val title: String,
+    val episodeId: Int,
+    val releaseDate: String,
+    val director: String
+)

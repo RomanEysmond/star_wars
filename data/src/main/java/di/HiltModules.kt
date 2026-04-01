@@ -69,7 +69,8 @@ object DatabaseModule {
             context,
             AppDatabase::class.java,
             "starwars_database"
-        ).build()
+        ).fallbackToDestructiveMigration()
+            .build()
     }
 
     @Provides
@@ -79,6 +80,11 @@ object DatabaseModule {
     @Provides
     @Singleton
     fun providePlanetDao(database: AppDatabase) = database.planetDao()
+
+    @Provides
+    @Singleton
+    fun provideFilmDao(database: AppDatabase) = database.filmDao()
+
 }
 
 @Module

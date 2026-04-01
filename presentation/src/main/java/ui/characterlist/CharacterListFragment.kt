@@ -52,9 +52,10 @@ class CharacterListFragment : Fragment() {
         setupSwipeRefresh()
         observeViewModel()
 
+        // Загружаем данные только если они еще не загружены
         viewModel.loadCharacters()
 
-        // Настройка SwipeRefreshLayout цветов
+        // Настройка цветов SwipeRefreshLayout
         swipeRefresh.setColorSchemeColors(
             resources.getColor(R.color.star_wars_yellow, null),
             resources.getColor(R.color.star_wars_white, null)
@@ -122,16 +123,29 @@ class CharacterListFragment : Fragment() {
         }
 
         viewModel.isLoading.observe(viewLifecycleOwner) { isLoading ->
-            if (isLoading == true && !swipeRefresh.isRefreshing) {
-                progressBar.isVisible = true
+            // Показываем прогресс только если данные не загружены и нет списка
+            if (isLoading == true) {
+                // Проверяем, есть ли уже данные
+                if (adapter.currentList.isEmpty()) {
+                    progressBar.isVisible = true
+                    recyclerView.isVisible = false
+                } else {
+                    // Если данные уже есть, скрываем прогресс
+                    progressBar.isVisible = false
+                }
+                swipeRefresh.isRefreshing = false
             } else {
                 progressBar.isVisible = false
                 swipeRefresh.isRefreshing = false
+                // Если данные загружены, показываем список
+                if (adapter.currentList.isNotEmpty()) {
+                    recyclerView.isVisible = true
+                }
             }
         }
 
         viewModel.errorMessage.observe(viewLifecycleOwner) { error ->
-            if (error != null) {
+            if (error != null && adapter.currentList.isEmpty()) {
                 errorView.isVisible = true
                 errorText.text = error
             } else {

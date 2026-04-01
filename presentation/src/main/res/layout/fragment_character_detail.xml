@@ -88,7 +88,6 @@
                     android:orientation="vertical"
                     android:padding="20dp">
 
-                    <!-- Section Title -->
                     <TextView
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
@@ -107,14 +106,12 @@
                         android:background="@color/star_wars_yellow"
                         android:alpha="0.3" />
 
-                    <!-- Info Grid -->
                     <GridLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:columnCount="2"
                         android:rowCount="6">
 
-                        <!-- Birth Year -->
                         <TextView
                             android:layout_width="0dp"
                             android:layout_height="wrap_content"
@@ -135,7 +132,6 @@
                             android:layout_columnWeight="1"
                             android:padding="12dp" />
 
-                        <!-- Height -->
                         <TextView
                             android:layout_width="0dp"
                             android:layout_height="wrap_content"
@@ -156,7 +152,6 @@
                             android:layout_columnWeight="1"
                             android:padding="12dp" />
 
-                        <!-- Mass -->
                         <TextView
                             android:layout_width="0dp"
                             android:layout_height="wrap_content"
@@ -177,7 +172,6 @@
                             android:layout_columnWeight="1"
                             android:padding="12dp" />
 
-                        <!-- Gender -->
                         <TextView
                             android:layout_width="0dp"
                             android:layout_height="wrap_content"
@@ -198,7 +192,6 @@
                             android:layout_columnWeight="1"
                             android:padding="12dp" />
 
-                        <!-- Hair Color -->
                         <TextView
                             android:layout_width="0dp"
                             android:layout_height="wrap_content"
@@ -219,7 +212,6 @@
                             android:layout_columnWeight="1"
                             android:padding="12dp" />
 
-                        <!-- Eye Color -->
                         <TextView
                             android:layout_width="0dp"
                             android:layout_height="wrap_content"
@@ -262,7 +254,6 @@
                     android:orientation="vertical"
                     android:padding="20dp">
 
-                    <!-- Section Title -->
                     <TextView
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
@@ -298,7 +289,6 @@
                         android:layout_height="wrap_content"
                         android:columnCount="2">
 
-                        <!-- Climate -->
                         <TextView
                             android:layout_width="0dp"
                             android:layout_height="wrap_content"
@@ -319,7 +309,6 @@
                             android:layout_columnWeight="1"
                             android:padding="12dp" />
 
-                        <!-- Terrain -->
                         <TextView
                             android:layout_width="0dp"
                             android:layout_height="wrap_content"
@@ -340,7 +329,6 @@
                             android:layout_columnWeight="1"
                             android:padding="12dp" />
 
-                        <!-- Population -->
                         <TextView
                             android:layout_width="0dp"
                             android:layout_height="wrap_content"
@@ -380,12 +368,13 @@
                 android:fontFamily="monospace" />
 
             <!-- Films Section -->
+            <!-- Films Section -->
             <com.google.android.material.card.MaterialCardView
                 android:id="@+id/filmsContainer"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginBottom="16dp"
-                android:visibility="gone"
+                android:visibility="visible"
                 app:cardCornerRadius="12dp"
                 app:cardElevation="4dp"
                 app:cardBackgroundColor="@color/star_wars_gray">
@@ -396,7 +385,6 @@
                     android:orientation="vertical"
                     android:padding="20dp">
 
-                    <!-- Section Title -->
                     <TextView
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
@@ -415,13 +403,36 @@
                         android:background="@color/star_wars_yellow"
                         android:alpha="0.3" />
 
-                    <TextView
-                        android:id="@+id/filmsList"
+                    <!-- ProgressBar for loading films -->
+                    <ProgressBar
+                        android:id="@+id/filmsProgressBar"
+                        style="?android:attr/progressBarStyleSmall"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="center"
+                        android:layout_margin="16dp"
+                        android:indeterminateTint="@color/star_wars_yellow" />
+
+                    <!-- Films RecyclerView -->
+                    <androidx.recyclerview.widget.RecyclerView
+                        android:id="@+id/filmsRecyclerView"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:textColor="@color/star_wars_white"
-                        android:textSize="14sp"
-                        android:padding="8dp" />
+                        android:nestedScrollingEnabled="false"
+                        android:visibility="gone" />
+
+                    <!-- Empty films message -->
+                    <TextView
+                        android:id="@+id/emptyFilmsText"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="NO FILMS AVAILABLE"
+                        android:gravity="center"
+                        android:padding="16dp"
+                        android:textColor="@color/star_wars_light_gray"
+                        android:textSize="12sp"
+                        android:fontFamily="monospace"
+                        android:visibility="gone" />
 
                 </LinearLayout>
 
@@ -468,6 +479,7 @@
             android:backgroundTint="@color/star_wars_yellow"
             android:textColor="@color/star_wars_black"
             android:fontFamily="monospace" />
+
     </LinearLayout>
 
 </LinearLayout>
