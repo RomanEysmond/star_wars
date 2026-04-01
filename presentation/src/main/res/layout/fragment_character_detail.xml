@@ -1,456 +1,465 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:orientation="vertical"
     android:background="@color/star_wars_black">
 
-    <!-- Star Wars Header -->
+    <!-- Основной контент (виден после загрузки) -->
     <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="vertical"
-        android:padding="16dp"
-        android:background="@color/star_wars_black">
-
-        <ImageView
-            android:layout_width="wrap_content"
-            android:layout_height="32dp"
-            android:layout_gravity="center"
-            android:layout_marginTop="8dp"
-            android:layout_marginBottom="8dp"
-            android:src="@android:drawable/star_big_on"
-            android:tint="@color/star_wars_yellow" />
-
-    </LinearLayout>
-
-    <ScrollView
+        android:id="@+id/contentLayout"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:scrollbarThumbVertical="@color/star_wars_yellow"
-        android:scrollbarSize="4dp">
+        android:orientation="vertical"
+        android:visibility="gone">
 
+        <!-- Star Wars Header -->
         <LinearLayout
-            android:id="@+id/contentLayout"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
-            android:padding="16dp">
+            android:padding="16dp"
+            android:background="@color/star_wars_black">
 
-            <!-- Character Name Card -->
-            <com.google.android.material.card.MaterialCardView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginBottom="16dp"
-                app:cardCornerRadius="12dp"
-                app:cardElevation="4dp"
-                app:cardBackgroundColor="@color/star_wars_dark">
-
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="vertical"
-                    android:padding="20dp">
-
-                    <View
-                        android:layout_width="60dp"
-                        android:layout_height="3dp"
-                        android:layout_marginBottom="12dp"
-                        android:background="@color/star_wars_yellow" />
-
-                    <TextView
-                        android:id="@+id/characterName"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:textSize="28sp"
-                        android:textStyle="bold"
-                        android:textColor="@color/star_wars_yellow"
-                        android:fontFamily="monospace"
-                        android:letterSpacing="0.1" />
-
-                </LinearLayout>
-
-            </com.google.android.material.card.MaterialCardView>
-
-            <!-- Basic Information Section -->
-            <com.google.android.material.card.MaterialCardView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginBottom="16dp"
-                app:cardCornerRadius="12dp"
-                app:cardElevation="4dp"
-                app:cardBackgroundColor="@color/star_wars_gray">
-
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="vertical"
-                    android:padding="20dp">
-
-                    <TextView
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:text="BASIC INFORMATION"
-                        android:textSize="16sp"
-                        android:textStyle="bold"
-                        android:textColor="@color/star_wars_yellow"
-                        android:fontFamily="monospace"
-                        android:letterSpacing="0.1"
-                        android:layout_marginBottom="16dp" />
-
-                    <View
-                        android:layout_width="match_parent"
-                        android:layout_height="1dp"
-                        android:layout_marginBottom="16dp"
-                        android:background="@color/star_wars_yellow"
-                        android:alpha="0.3" />
-
-                    <GridLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:columnCount="2"
-                        android:rowCount="6">
-
-                        <TextView
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:text="BIRTH YEAR:"
-                            android:textStyle="bold"
-                            android:textColor="@color/star_wars_yellow"
-                            android:textSize="12sp"
-                            android:fontFamily="monospace"
-                            android:layout_columnWeight="1"
-                            android:padding="12dp" />
-
-                        <TextView
-                            android:id="@+id/birthYearValue"
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:textColor="@color/star_wars_white"
-                            android:textSize="14sp"
-                            android:layout_columnWeight="1"
-                            android:padding="12dp" />
-
-                        <TextView
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:text="HEIGHT:"
-                            android:textStyle="bold"
-                            android:textColor="@color/star_wars_yellow"
-                            android:textSize="12sp"
-                            android:fontFamily="monospace"
-                            android:layout_columnWeight="1"
-                            android:padding="12dp" />
-
-                        <TextView
-                            android:id="@+id/heightValue"
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:textColor="@color/star_wars_white"
-                            android:textSize="14sp"
-                            android:layout_columnWeight="1"
-                            android:padding="12dp" />
-
-                        <TextView
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:text="MASS:"
-                            android:textStyle="bold"
-                            android:textColor="@color/star_wars_yellow"
-                            android:textSize="12sp"
-                            android:fontFamily="monospace"
-                            android:layout_columnWeight="1"
-                            android:padding="12dp" />
-
-                        <TextView
-                            android:id="@+id/massValue"
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:textColor="@color/star_wars_white"
-                            android:textSize="14sp"
-                            android:layout_columnWeight="1"
-                            android:padding="12dp" />
-
-                        <TextView
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:text="GENDER:"
-                            android:textStyle="bold"
-                            android:textColor="@color/star_wars_yellow"
-                            android:textSize="12sp"
-                            android:fontFamily="monospace"
-                            android:layout_columnWeight="1"
-                            android:padding="12dp" />
-
-                        <TextView
-                            android:id="@+id/genderValue"
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:textColor="@color/star_wars_white"
-                            android:textSize="14sp"
-                            android:layout_columnWeight="1"
-                            android:padding="12dp" />
-
-                        <TextView
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:text="HAIR COLOR:"
-                            android:textStyle="bold"
-                            android:textColor="@color/star_wars_yellow"
-                            android:textSize="12sp"
-                            android:fontFamily="monospace"
-                            android:layout_columnWeight="1"
-                            android:padding="12dp" />
-
-                        <TextView
-                            android:id="@+id/hairValue"
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:textColor="@color/star_wars_white"
-                            android:textSize="14sp"
-                            android:layout_columnWeight="1"
-                            android:padding="12dp" />
-
-                        <TextView
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:text="EYE COLOR:"
-                            android:textStyle="bold"
-                            android:textColor="@color/star_wars_yellow"
-                            android:textSize="12sp"
-                            android:fontFamily="monospace"
-                            android:layout_columnWeight="1"
-                            android:padding="12dp" />
-
-                        <TextView
-                            android:id="@+id/eyesValue"
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:textColor="@color/star_wars_white"
-                            android:textSize="14sp"
-                            android:layout_columnWeight="1"
-                            android:padding="12dp" />
-
-                    </GridLayout>
-
-                </LinearLayout>
-
-            </com.google.android.material.card.MaterialCardView>
-
-            <!-- Homeworld Section -->
-            <com.google.android.material.card.MaterialCardView
-                android:id="@+id/homeworldCard"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginBottom="16dp"
-                app:cardCornerRadius="12dp"
-                app:cardElevation="4dp"
-                app:cardBackgroundColor="@color/star_wars_gray">
-
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="vertical"
-                    android:padding="20dp">
-
-                    <TextView
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:text="HOMEWORLD"
-                        android:textSize="16sp"
-                        android:textStyle="bold"
-                        android:textColor="@color/star_wars_yellow"
-                        android:fontFamily="monospace"
-                        android:letterSpacing="0.1"
-                        android:layout_marginBottom="16dp" />
-
-                    <View
-                        android:layout_width="match_parent"
-                        android:layout_height="1dp"
-                        android:layout_marginBottom="16dp"
-                        android:background="@color/star_wars_yellow"
-                        android:alpha="0.3" />
-
-                    <TextView
-                        android:id="@+id/homeworldName"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:textSize="18sp"
-                        android:textStyle="bold"
-                        android:textColor="@color/star_wars_yellow"
-                        android:fontFamily="monospace"
-                        android:gravity="center"
-                        android:padding="12dp"
-                        android:layout_marginBottom="12dp" />
-
-                    <GridLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:columnCount="2">
-
-                        <TextView
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:text="CLIMATE:"
-                            android:textStyle="bold"
-                            android:textColor="@color/star_wars_yellow"
-                            android:textSize="12sp"
-                            android:fontFamily="monospace"
-                            android:layout_columnWeight="1"
-                            android:padding="12dp" />
-
-                        <TextView
-                            android:id="@+id/homeworldClimate"
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:textColor="@color/star_wars_white"
-                            android:textSize="14sp"
-                            android:layout_columnWeight="1"
-                            android:padding="12dp" />
-
-                        <TextView
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:text="TERRAIN:"
-                            android:textStyle="bold"
-                            android:textColor="@color/star_wars_yellow"
-                            android:textSize="12sp"
-                            android:fontFamily="monospace"
-                            android:layout_columnWeight="1"
-                            android:padding="12dp" />
-
-                        <TextView
-                            android:id="@+id/homeworldTerrain"
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:textColor="@color/star_wars_white"
-                            android:textSize="14sp"
-                            android:layout_columnWeight="1"
-                            android:padding="12dp" />
-
-                        <TextView
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:text="POPULATION:"
-                            android:textStyle="bold"
-                            android:textColor="@color/star_wars_yellow"
-                            android:textSize="12sp"
-                            android:fontFamily="monospace"
-                            android:layout_columnWeight="1"
-                            android:padding="12dp" />
-
-                        <TextView
-                            android:id="@+id/homeworldPopulation"
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:textColor="@color/star_wars_white"
-                            android:textSize="14sp"
-                            android:layout_columnWeight="1"
-                            android:padding="12dp" />
-
-                    </GridLayout>
-
-                </LinearLayout>
-
-            </com.google.android.material.card.MaterialCardView>
-
-            <TextView
-                android:id="@+id/noHomeworldText"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="NO HOMEWORLD INFORMATION AVAILABLE"
-                android:gravity="center"
-                android:padding="20dp"
-                android:visibility="gone"
-                android:textColor="@color/star_wars_light_gray"
-                android:textSize="12sp"
-                android:fontFamily="monospace" />
-
-            <!-- Films Section -->
-            <!-- Films Section -->
-            <com.google.android.material.card.MaterialCardView
-                android:id="@+id/filmsContainer"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginBottom="16dp"
-                android:visibility="visible"
-                app:cardCornerRadius="12dp"
-                app:cardElevation="4dp"
-                app:cardBackgroundColor="@color/star_wars_gray">
-
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="vertical"
-                    android:padding="20dp">
-
-                    <TextView
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:text="APPEARANCES"
-                        android:textSize="16sp"
-                        android:textStyle="bold"
-                        android:textColor="@color/star_wars_yellow"
-                        android:fontFamily="monospace"
-                        android:letterSpacing="0.1"
-                        android:layout_marginBottom="16dp" />
-
-                    <View
-                        android:layout_width="match_parent"
-                        android:layout_height="1dp"
-                        android:layout_marginBottom="16dp"
-                        android:background="@color/star_wars_yellow"
-                        android:alpha="0.3" />
-
-                    <!-- ProgressBar for loading films -->
-                    <ProgressBar
-                        android:id="@+id/filmsProgressBar"
-                        style="?android:attr/progressBarStyleSmall"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_gravity="center"
-                        android:layout_margin="16dp"
-                        android:indeterminateTint="@color/star_wars_yellow" />
-
-                    <!-- Films RecyclerView -->
-                    <androidx.recyclerview.widget.RecyclerView
-                        android:id="@+id/filmsRecyclerView"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:nestedScrollingEnabled="false"
-                        android:visibility="gone" />
-
-                    <!-- Empty films message -->
-                    <TextView
-                        android:id="@+id/emptyFilmsText"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:text="NO FILMS AVAILABLE"
-                        android:gravity="center"
-                        android:padding="16dp"
-                        android:textColor="@color/star_wars_light_gray"
-                        android:textSize="12sp"
-                        android:fontFamily="monospace"
-                        android:visibility="gone" />
-
-                </LinearLayout>
-
-            </com.google.android.material.card.MaterialCardView>
+            <ImageView
+                android:layout_width="wrap_content"
+                android:layout_height="32dp"
+                android:layout_gravity="center"
+                android:layout_marginTop="8dp"
+                android:layout_marginBottom="8dp"
+                android:src="@android:drawable/star_big_on"
+                android:tint="@color/star_wars_yellow" />
 
         </LinearLayout>
 
-    </ScrollView>
+        <ScrollView
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:scrollbarThumbVertical="@color/star_wars_yellow"
+            android:scrollbarSize="4dp">
 
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="16dp">
+
+                <!-- Character Name Card -->
+                <com.google.android.material.card.MaterialCardView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="16dp"
+                    app:cardCornerRadius="12dp"
+                    app:cardElevation="4dp"
+                    app:cardBackgroundColor="@color/star_wars_dark">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:padding="20dp">
+
+                        <View
+                            android:layout_width="60dp"
+                            android:layout_height="3dp"
+                            android:layout_marginBottom="12dp"
+                            android:background="@color/star_wars_yellow" />
+
+                        <TextView
+                            android:id="@+id/characterName"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:textSize="28sp"
+                            android:textStyle="bold"
+                            android:textColor="@color/star_wars_yellow"
+                            android:fontFamily="monospace"
+                            android:letterSpacing="0.1" />
+
+                    </LinearLayout>
+
+                </com.google.android.material.card.MaterialCardView>
+
+                <!-- Basic Information Section -->
+                <com.google.android.material.card.MaterialCardView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="16dp"
+                    app:cardCornerRadius="12dp"
+                    app:cardElevation="4dp"
+                    app:cardBackgroundColor="@color/star_wars_gray">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:padding="20dp">
+
+                        <TextView
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:text="BASIC INFORMATION"
+                            android:textSize="16sp"
+                            android:textStyle="bold"
+                            android:textColor="@color/star_wars_yellow"
+                            android:fontFamily="monospace"
+                            android:letterSpacing="0.1"
+                            android:layout_marginBottom="16dp" />
+
+                        <View
+                            android:layout_width="match_parent"
+                            android:layout_height="1dp"
+                            android:layout_marginBottom="16dp"
+                            android:background="@color/star_wars_yellow"
+                            android:alpha="0.3" />
+
+                        <GridLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:columnCount="2"
+                            android:rowCount="6">
+
+                            <TextView
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:text="BIRTH YEAR:"
+                                android:textStyle="bold"
+                                android:textColor="@color/star_wars_yellow"
+                                android:textSize="12sp"
+                                android:fontFamily="monospace"
+                                android:layout_columnWeight="1"
+                                android:padding="12dp" />
+
+                            <TextView
+                                android:id="@+id/birthYearValue"
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:textColor="@color/star_wars_white"
+                                android:textSize="14sp"
+                                android:layout_columnWeight="1"
+                                android:padding="12dp" />
+
+                            <TextView
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:text="HEIGHT:"
+                                android:textStyle="bold"
+                                android:textColor="@color/star_wars_yellow"
+                                android:textSize="12sp"
+                                android:fontFamily="monospace"
+                                android:layout_columnWeight="1"
+                                android:padding="12dp" />
+
+                            <TextView
+                                android:id="@+id/heightValue"
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:textColor="@color/star_wars_white"
+                                android:textSize="14sp"
+                                android:layout_columnWeight="1"
+                                android:padding="12dp" />
+
+                            <TextView
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:text="MASS:"
+                                android:textStyle="bold"
+                                android:textColor="@color/star_wars_yellow"
+                                android:textSize="12sp"
+                                android:fontFamily="monospace"
+                                android:layout_columnWeight="1"
+                                android:padding="12dp" />
+
+                            <TextView
+                                android:id="@+id/massValue"
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:textColor="@color/star_wars_white"
+                                android:textSize="14sp"
+                                android:layout_columnWeight="1"
+                                android:padding="12dp" />
+
+                            <TextView
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:text="GENDER:"
+                                android:textStyle="bold"
+                                android:textColor="@color/star_wars_yellow"
+                                android:textSize="12sp"
+                                android:fontFamily="monospace"
+                                android:layout_columnWeight="1"
+                                android:padding="12dp" />
+
+                            <TextView
+                                android:id="@+id/genderValue"
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:textColor="@color/star_wars_white"
+                                android:textSize="14sp"
+                                android:layout_columnWeight="1"
+                                android:padding="12dp" />
+
+                            <TextView
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:text="HAIR COLOR:"
+                                android:textStyle="bold"
+                                android:textColor="@color/star_wars_yellow"
+                                android:textSize="12sp"
+                                android:fontFamily="monospace"
+                                android:layout_columnWeight="1"
+                                android:padding="12dp" />
+
+                            <TextView
+                                android:id="@+id/hairValue"
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:textColor="@color/star_wars_white"
+                                android:textSize="14sp"
+                                android:layout_columnWeight="1"
+                                android:padding="12dp" />
+
+                            <TextView
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:text="EYE COLOR:"
+                                android:textStyle="bold"
+                                android:textColor="@color/star_wars_yellow"
+                                android:textSize="12sp"
+                                android:fontFamily="monospace"
+                                android:layout_columnWeight="1"
+                                android:padding="12dp" />
+
+                            <TextView
+                                android:id="@+id/eyesValue"
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:textColor="@color/star_wars_white"
+                                android:textSize="14sp"
+                                android:layout_columnWeight="1"
+                                android:padding="12dp" />
+
+                        </GridLayout>
+
+                    </LinearLayout>
+
+                </com.google.android.material.card.MaterialCardView>
+
+                <!-- Homeworld Section -->
+                <com.google.android.material.card.MaterialCardView
+                    android:id="@+id/homeworldCard"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="16dp"
+                    app:cardCornerRadius="12dp"
+                    app:cardElevation="4dp"
+                    app:cardBackgroundColor="@color/star_wars_gray">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:padding="20dp">
+
+                        <TextView
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:text="HOMEWORLD"
+                            android:textSize="16sp"
+                            android:textStyle="bold"
+                            android:textColor="@color/star_wars_yellow"
+                            android:fontFamily="monospace"
+                            android:letterSpacing="0.1"
+                            android:layout_marginBottom="16dp" />
+
+                        <View
+                            android:layout_width="match_parent"
+                            android:layout_height="1dp"
+                            android:layout_marginBottom="16dp"
+                            android:background="@color/star_wars_yellow"
+                            android:alpha="0.3" />
+
+                        <TextView
+                            android:id="@+id/homeworldName"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:textSize="18sp"
+                            android:textStyle="bold"
+                            android:textColor="@color/star_wars_yellow"
+                            android:fontFamily="monospace"
+                            android:gravity="center"
+                            android:padding="12dp"
+                            android:layout_marginBottom="12dp" />
+
+                        <GridLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:columnCount="2">
+
+                            <TextView
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:text="CLIMATE:"
+                                android:textStyle="bold"
+                                android:textColor="@color/star_wars_yellow"
+                                android:textSize="12sp"
+                                android:fontFamily="monospace"
+                                android:layout_columnWeight="1"
+                                android:padding="12dp" />
+
+                            <TextView
+                                android:id="@+id/homeworldClimate"
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:textColor="@color/star_wars_white"
+                                android:textSize="14sp"
+                                android:layout_columnWeight="1"
+                                android:padding="12dp" />
+
+                            <TextView
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:text="TERRAIN:"
+                                android:textStyle="bold"
+                                android:textColor="@color/star_wars_yellow"
+                                android:textSize="12sp"
+                                android:fontFamily="monospace"
+                                android:layout_columnWeight="1"
+                                android:padding="12dp" />
+
+                            <TextView
+                                android:id="@+id/homeworldTerrain"
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:textColor="@color/star_wars_white"
+                                android:textSize="14sp"
+                                android:layout_columnWeight="1"
+                                android:padding="12dp" />
+
+                            <TextView
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:text="POPULATION:"
+                                android:textStyle="bold"
+                                android:textColor="@color/star_wars_yellow"
+                                android:textSize="12sp"
+                                android:fontFamily="monospace"
+                                android:layout_columnWeight="1"
+                                android:padding="12dp" />
+
+                            <TextView
+                                android:id="@+id/homeworldPopulation"
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:textColor="@color/star_wars_white"
+                                android:textSize="14sp"
+                                android:layout_columnWeight="1"
+                                android:padding="12dp" />
+
+                        </GridLayout>
+
+                    </LinearLayout>
+
+                </com.google.android.material.card.MaterialCardView>
+
+                <TextView
+                    android:id="@+id/noHomeworldText"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="NO HOMEWORLD INFORMATION AVAILABLE"
+                    android:gravity="center"
+                    android:padding="20dp"
+                    android:visibility="gone"
+                    android:textColor="@color/star_wars_light_gray"
+                    android:textSize="12sp"
+                    android:fontFamily="monospace" />
+
+                <!-- Films Section -->
+                <com.google.android.material.card.MaterialCardView
+                    android:id="@+id/filmsContainer"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="16dp"
+                    android:visibility="visible"
+                    app:cardCornerRadius="12dp"
+                    app:cardElevation="4dp"
+                    app:cardBackgroundColor="@color/star_wars_gray">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:padding="20dp">
+
+                        <TextView
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:text="APPEARANCES"
+                            android:textSize="16sp"
+                            android:textStyle="bold"
+                            android:textColor="@color/star_wars_yellow"
+                            android:fontFamily="monospace"
+                            android:letterSpacing="0.1"
+                            android:layout_marginBottom="16dp" />
+
+                        <View
+                            android:layout_width="match_parent"
+                            android:layout_height="1dp"
+                            android:layout_marginBottom="16dp"
+                            android:background="@color/star_wars_yellow"
+                            android:alpha="0.3" />
+
+                        <!-- ProgressBar for loading films (маленький, внутри карточки) -->
+                        <ProgressBar
+                            android:id="@+id/filmsProgressBar"
+                            style="?android:attr/progressBarStyleSmall"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_gravity="center"
+                            android:layout_margin="16dp"
+                            android:indeterminateTint="@color/star_wars_yellow" />
+
+                        <!-- Films RecyclerView -->
+                        <androidx.recyclerview.widget.RecyclerView
+                            android:id="@+id/filmsRecyclerView"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:nestedScrollingEnabled="false"
+                            android:visibility="gone" />
+
+                        <!-- Empty films message -->
+                        <TextView
+                            android:id="@+id/emptyFilmsText"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:text="NO FILMS AVAILABLE"
+                            android:gravity="center"
+                            android:padding="16dp"
+                            android:textColor="@color/star_wars_light_gray"
+                            android:textSize="12sp"
+                            android:fontFamily="monospace"
+                            android:visibility="gone" />
+
+                    </LinearLayout>
+
+                </com.google.android.material.card.MaterialCardView>
+
+            </LinearLayout>
+
+        </ScrollView>
+
+    </LinearLayout>
+
+    <!-- Полноэкранный прогресс-бар (по центру) -->
     <ProgressBar
         android:id="@+id/progressBar"
         style="?android:attr/progressBarStyleLarge"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_gravity="center"
-        android:visibility="gone"
+        android:visibility="visible"
         android:indeterminateTint="@color/star_wars_yellow" />
 
+    <!-- Сообщение об ошибке (по центру) -->
     <LinearLayout
         android:id="@+id/errorView"
         android:layout_width="match_parent"
@@ -482,4 +491,4 @@
 
     </LinearLayout>
 
-</LinearLayout>
+</FrameLayout>

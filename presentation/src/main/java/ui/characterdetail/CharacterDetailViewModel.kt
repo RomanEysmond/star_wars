@@ -33,25 +33,47 @@ class CharacterDetailViewModel @Inject constructor(
 
     fun loadCharacterDetails(characterId: Int) {
         viewModelScope.launch {
+            // Показываем полноэкранный прогресс-бар
             _isLoading.value = true
             _isFilmsLoading.value = true
             _errorMessage.value = null
 
             val result = getCharacterDetailUseCase(characterId)
-            result.onSuccess { character ->
-                _character.value = character
-                _isLoading.value = false
 
-                // Показываем фильмы по мере их поступления
-                if (character.films.isNotEmpty()) {
-                    _films.value = character.films
-                }
-                _isFilmsLoading.value = false
+            result.onSuccess { character ->
+                // Сохраняем персонажа
+                _character.value = character
+
+                // Загружаем фильмы (если они не пришли вместе с персонажем)
+                loadFilms(character.films)
+
             }.onFailure { exception ->
+                // Ошибка загрузки персонажа
                 _isLoading.value = false
                 _isFilmsLoading.value = false
                 _errorMessage.value = "Не удалось загрузить данные о персонаже. Проверьте подключение к интернету."
             }
+        }
+    }
+
+    private fun loadFilms(filmsList: List<Film>) {
+        viewModelScope.launch {
+            if (filmsList.isEmpty()) {
+                // Нет фильмов
+                _films.value = emptyList()
+                _isFilmsLoading.value = false
+                _isLoading.value = false  // ✅ Скрываем полноэкранный прогресс
+                return@launch
+            }
+
+            // Если фильмы уже загружены в персонаже, просто показываем их
+            // Но добавляем небольшую задержку для UX (чтобы прогресс-бар покрутился)
+            // Это создаст иллюзию загрузки и предотвратит мерцание
+            kotlinx.coroutines.delay(300) // 300ms задержки для плавности
+
+            _films.value = filmsList
+            _isFilmsLoading.value = false
+            _isLoading.value = false  // ✅ Скрываем полноэкранный прогресс ТОЛЬКО здесь
         }
     }
 }

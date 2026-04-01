@@ -1,6 +1,7 @@
 package com.example.starwars.presentation.ui.characterdetail
 
 import android.os.Bundle
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -21,6 +22,7 @@ import dagger.hilt.android.AndroidEntryPoint
 @AndroidEntryPoint
 class CharacterDetailFragment : Fragment() {
 
+    // Views
     private lateinit var contentLayout: LinearLayout
     private lateinit var progressBar: ProgressBar
     private lateinit var errorView: View
@@ -64,6 +66,7 @@ class CharacterDetailFragment : Fragment() {
         setupRecyclerView()
         observeViewModel()
 
+        // Загружаем данные
         val characterId = arguments?.getInt("characterId") ?: 0
         viewModel.loadCharacterDetails(characterId)
     }
@@ -74,7 +77,6 @@ class CharacterDetailFragment : Fragment() {
         errorView = view.findViewById(R.id.errorView)
         errorText = view.findViewById(R.id.errorText)
         retryButton = view.findViewById(R.id.retryButton)
-
         characterName = view.findViewById(R.id.characterName)
         heightValue = view.findViewById(R.id.heightValue)
         massValue = view.findViewById(R.id.massValue)
@@ -97,9 +99,6 @@ class CharacterDetailFragment : Fragment() {
             val characterId = arguments?.getInt("characterId") ?: 0
             viewModel.loadCharacterDetails(characterId)
         }
-
-        // Показываем прогресс загрузки фильмов с самого начала
-        showFilmsLoading()
     }
 
     private fun setupRecyclerView() {
@@ -112,30 +111,28 @@ class CharacterDetailFragment : Fragment() {
     }
 
     private fun observeViewModel() {
+        // Наблюдаем за основным состоянием загрузки (показываем на весь экран)
+        viewModel.isLoading.observe(viewLifecycleOwner) { isLoading ->
+            if (isLoading == true) {
+                showFullScreenLoading()
+            } else {
+                hideFullScreenLoading()
+            }
+        }
+
+        // Наблюдаем за данными персонажа
         viewModel.character.observe(viewLifecycleOwner) { character ->
             character?.let {
                 bindCharacterData(it)
             }
         }
 
-        viewModel.isLoading.observe(viewLifecycleOwner) { isLoading ->
-            if (isLoading == true) {
-                progressBar.isVisible = true
-                contentLayout.isVisible = false
-                errorView.isVisible = false
-            } else {
-                progressBar.isVisible = false
-                contentLayout.isVisible = true
-            }
-        }
-
-        // Наблюдаем за загрузкой фильмов
+        // Наблюдаем за загрузкой фильмов (только индикатор внутри карточки)
         viewModel.isFilmsLoading.observe(viewLifecycleOwner) { isLoading ->
             if (isLoading == true) {
                 showFilmsLoading()
             } else {
-                // Загрузка завершена, скрываем прогресс
-                filmsProgressBar.isVisible = false
+                hideFilmsLoading()
             }
         }
 
@@ -143,32 +140,68 @@ class CharacterDetailFragment : Fragment() {
         viewModel.films.observe(viewLifecycleOwner) { films ->
             if (films.isNotEmpty()) {
                 showFilmsList(films)
-            } else if (viewModel.isFilmsLoading.value == false) {
+            } else if (viewModel.isFilmsLoading.value == false && viewModel.character.value != null) {
                 showEmptyFilms()
             }
         }
 
+        // Наблюдаем за ошибками
         viewModel.errorMessage.observe(viewLifecycleOwner) { error ->
             if (error != null) {
-                errorView.isVisible = true
-                errorText.text = error
-                contentLayout.isVisible = false
+                showError(error)
             } else {
-                errorView.isVisible = false
+                hideError()
             }
         }
     }
 
+    // Методы управления состояниями UI
+
+    /**
+     * Показывает полноэкранный прогресс-бар во время загрузки ВСЕХ данных
+     */
+    private fun showFullScreenLoading() {
+        progressBar.isVisible = true      // Большой прогресс-бар на весь экран
+        contentLayout.isVisible = false   // Скрываем весь контент
+        errorView.isVisible = false       // Скрываем ошибку
+    }
+
+    /**
+     * Скрывает полноэкранный прогресс-бар после полной загрузки
+     */
+    private fun hideFullScreenLoading() {
+        progressBar.isVisible = false
+        contentLayout.isVisible = true
+    }
+
+    private fun showError(error: String) {
+        progressBar.isVisible = false
+        contentLayout.isVisible = false
+        errorView.isVisible = true
+        errorText.text = error
+    }
+
+    private fun hideError() {
+        errorView.isVisible = false
+    }
+
+    /**
+     * Показывает маленький прогресс-бар внутри карточки фильмов
+     */
     private fun showFilmsLoading() {
-        // Показываем ProgressBar, скрываем список и сообщение об отсутствии фильмов
-        filmsContainer.isVisible = true
         filmsProgressBar.isVisible = true
         filmsRecyclerView.isVisible = false
         emptyFilmsText.isVisible = false
     }
 
+    /**
+     * Скрывает маленький прогресс-бар внутри карточки фильмов
+     */
+    private fun hideFilmsLoading() {
+        filmsProgressBar.isVisible = false
+    }
+
     private fun showFilmsList(films: List<com.example.starwars.domain.models.Film>) {
-        // Показываем список фильмов, скрываем ProgressBar
         filmsProgressBar.isVisible = false
         filmsRecyclerView.isVisible = true
         emptyFilmsText.isVisible = false
@@ -176,7 +209,6 @@ class CharacterDetailFragment : Fragment() {
     }
 
     private fun showEmptyFilms() {
-        // Показываем сообщение об отсутствии фильмов
         filmsProgressBar.isVisible = false
         filmsRecyclerView.isVisible = false
         emptyFilmsText.isVisible = true
@@ -191,6 +223,7 @@ class CharacterDetailFragment : Fragment() {
         birthYearValue.text = character.birthYear
         genderValue.text = character.gender.uppercase()
 
+        // Отображаем домашнюю планету
         character.homeworld?.let { planet ->
             homeworldName.text = planet.name.uppercase()
             homeworldClimate.text = planet.climate.uppercase()
@@ -202,8 +235,5 @@ class CharacterDetailFragment : Fragment() {
             homeworldCard.isVisible = false
             noHomeworldText.isVisible = true
         }
-
-        // Не обновляем здесь список фильмов, так как он обновляется через LiveData
-        // Это предотвращает мигание ProgressBar
     }
 }
