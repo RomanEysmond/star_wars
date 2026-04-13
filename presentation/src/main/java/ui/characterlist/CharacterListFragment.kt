@@ -43,7 +43,6 @@ class CharacterListFragment : Fragment() {
     private val viewModel: CharacterListViewModel by viewModels()
     private lateinit var adapter: CharacterAdapter
 
-    // Русские фразы из Star Wars
     private val starWarsPhrases = listOf(
         "СКАНИРОВАНИЕ ОКРУЖАЮЩЕГО ПРОСТРАНСТВА...",
         "ЗАТОЧКА СВЕТОВОГО МЕЧА...",
@@ -76,10 +75,8 @@ class CharacterListFragment : Fragment() {
         setupSwipeRefresh()
         observeViewModel()
 
-        // Загружаем данные только если они еще не загружены
         viewModel.loadCharacters()
 
-        // Настройка цветов SwipeRefreshLayout
         swipeRefresh.setColorSchemeColors(
             resources.getColor(R.color.star_wars_yellow, null),
             resources.getColor(R.color.star_wars_white, null)
@@ -143,9 +140,7 @@ class CharacterListFragment : Fragment() {
         }
     }
 
-    /**
-     * Запускает анимацию смены фраз
-     */
+
     private fun startPhraseAnimation() {
         phraseIndex = 0
         loadingPhraseText.text = starWarsPhrases[phraseIndex]
@@ -173,9 +168,7 @@ class CharacterListFragment : Fragment() {
         handler.post(phraseRunnable!!)
     }
 
-    /**
-     * Останавливает анимацию смены фраз
-     */
+
     private fun stopPhraseAnimation() {
         phraseRunnable?.let {
             handler.removeCallbacks(it)
@@ -199,22 +192,16 @@ class CharacterListFragment : Fragment() {
         viewModel.isLoading.observe(viewLifecycleOwner) { isLoading ->
             when (isLoading) {
                 true -> {
-                    // Проверяем, есть ли уже данные
                     if (adapter.currentList.isEmpty()) {
-                        // Первая загрузка - показываем полноэкранный прогресс с фразами
                         showFullScreenLoading()
                     } else {
-                        // Обновление данных - показываем SwipeRefresh
                         swipeRefresh.isRefreshing = true
                         hideFullScreenLoading()
                     }
                 }
                 false -> {
-                    // Загрузка завершена
                     hideFullScreenLoading()
                     swipeRefresh.isRefreshing = false
-
-                    // Если данные загружены, показываем список
                     if (adapter.currentList.isNotEmpty()) {
                         recyclerView.isVisible = true
                     }
@@ -231,9 +218,7 @@ class CharacterListFragment : Fragment() {
         }
     }
 
-    /**
-     * Показывает полноэкранную загрузку с фразами
-     */
+
     private fun showFullScreenLoading() {
         loadingContainer.isVisible = true
         progressBar.isVisible = false  // Скрываем старый прогресс-бар
@@ -243,18 +228,14 @@ class CharacterListFragment : Fragment() {
         startPhraseAnimation()
     }
 
-    /**
-     * Скрывает полноэкранную загрузку
-     */
+
     private fun hideFullScreenLoading() {
         loadingContainer.isVisible = false
         progressBar.isVisible = false
         stopPhraseAnimation()
     }
 
-    /**
-     * Показывает сообщение об ошибке
-     */
+
     private fun showError(error: String) {
         loadingContainer.isVisible = false
         progressBar.isVisible = false
@@ -265,9 +246,6 @@ class CharacterListFragment : Fragment() {
         stopPhraseAnimation()
     }
 
-    /**
-     * Скрывает сообщение об ошибке
-     */
     private fun hideError() {
         errorView.isVisible = false
     }

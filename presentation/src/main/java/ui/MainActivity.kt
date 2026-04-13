@@ -28,7 +28,6 @@ class MainActivity : AppCompatActivity() {
         val navHostFragment = supportFragmentManager.findFragmentById(R.id.nav_host_fragment) as NavHostFragment
         navController = navHostFragment.navController
 
-        // Устанавливаем граф навигации программно
         navController.setGraph(R.navigation.nav_graph)
 
         val appBarConfiguration = AppBarConfiguration(

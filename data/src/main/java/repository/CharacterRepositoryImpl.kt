@@ -67,16 +67,13 @@ class CharacterRepositoryImpl @Inject constructor(
             if (personEntity != null) {
                 Log.d(TAG, "Loading character from cache: $characterId")
 
-                // Загружаем данные из кеша
                 val character = loadCharacterFromCache(personEntity)
                 Result.success(character)
             } else {
                 Log.d(TAG, "Loading character from API: $characterId")
 
-                // Загружаем из API с параллельными запросами
                 val character = loadCharacterFromApi(characterId)
 
-                // Сохраняем в кеш
                 cacheCharacter(character)
 
                 Result.success(character)
@@ -88,17 +85,13 @@ class CharacterRepositoryImpl @Inject constructor(
         }
     }
 
-    /**
-     * Загрузка персонажа из кеша с подгрузкой связанных данных
-     */
+
     private suspend fun loadCharacterFromCache(personEntity: PersonEntity): Character {
-        // 1. Загружаем планету из кеша (или API, если нет)
         val planet = if (personEntity.homeworldId > 0) {
             database.planetDao().getPlanetById(personEntity.homeworldId)?.toDomain()
                 ?: fetchAndCachePlanet(personEntity.homeworldId)?.toDomain()
         } else null
 
-        // 2. Получаем ID фильмов из строки
         val filmIdentifiers = if (personEntity.films.isNotEmpty()) {
             personEntity.films.split(",").filter { it.isNotEmpty() }
         } else {
@@ -107,7 +100,6 @@ class CharacterRepositoryImpl @Inject constructor(
 
         Log.d(TAG, "Film identifiers from cache: $filmIdentifiers")
 
-        // 3. Загружаем фильмы из кеша или API
         val films = loadFilmsWithCache(filmIdentifiers)
 
         return Character(
@@ -124,27 +116,21 @@ class CharacterRepositoryImpl @Inject constructor(
         )
     }
 
-    /**
-     * Загрузка персонажа из API с ПАРАЛЛЕЛЬНЫМИ запросами для связанных данных
-     */
+
     private suspend fun loadCharacterFromApi(characterId: Int): Character = coroutineScope {
         Log.d(TAG, "Loading character $characterId from API with parallel requests")
 
-        // Основной запрос персонажа
         val characterResponse = api.getPersonDetails(characterId)
 
-        // ПАРАЛЛЕЛЬНО загружаем все связанные данные
         val homeworldDeferred = async {
             fetchAndCachePlanet(extractIdFromUrl(characterResponse.homeworld))
         }
 
         val filmsDeferred = async {
-            // Параллельно загружаем все фильмы
             val filmIdentifiers = characterResponse.films
             Log.d(TAG, "Film URLs from API: $filmIdentifiers")
 
             if (filmIdentifiers.isNotEmpty()) {
-                // Загружаем фильмы параллельно
                 filmIdentifiers.map { filmUrl ->
                     async {
                         val filmId = extractIdFromUrl(filmUrl)
@@ -156,7 +142,6 @@ class CharacterRepositoryImpl @Inject constructor(
             }
         }
 
-        // Ждем результаты всех параллельных запросов
         val planet = homeworldDeferred.await()
         val films = filmsDeferred.await()
 
@@ -176,9 +161,7 @@ class CharacterRepositoryImpl @Inject constructor(
         )
     }
 
-    /**
-     * Загрузка фильма из API и сохранение в кеш
-     */
+
     private suspend fun fetchAndCacheFilm(filmId: Int): FilmEntity {
         Log.d(TAG, "Fetching film $filmId from API")
         val response = api.getFilm(filmId)
@@ -193,13 +176,10 @@ class CharacterRepositoryImpl @Inject constructor(
         return entity
     }
 
-    /**
-     * Универсальный метод: принимает List<String> (могут быть как ID в виде строк, так и URL)
-     */
+
     private suspend fun loadFilmsWithCache(filmIdentifiers: List<String>): List<Film> {
         if (filmIdentifiers.isEmpty()) return emptyList()
 
-        // Преобразуем идентификаторы в ID (числа)
         val filmIds = filmIdentifiers.map { identifier ->
             identifier.toIntOrNull() ?: extractIdFromUrl(identifier)
         }
@@ -212,12 +192,10 @@ class CharacterRepositoryImpl @Inject constructor(
 
         Log.d(TAG, "Cached films: ${cachedFilms.size} of ${filmIds.size}")
 
-        // Если все фильмы уже в кеше – возвращаем их
         if (cachedFilms.size == filmIds.size) {
             return cachedFilms.sortedBy { it.episodeId }
         }
 
-        // Иначе догружаем недостающие из API параллельно
         val missingIds = filmIds.filter { id ->
             database.filmDao().getFilmById(id) == null
         }
@@ -236,9 +214,6 @@ class CharacterRepositoryImpl @Inject constructor(
         return (cachedFilms + newFilms).sortedBy { it.episodeId }
     }
 
-    /**
-     * Загрузка планеты из API и сохранение в кеш
-     */
     private suspend fun fetchAndCachePlanet(planetId: Int): PlanetEntity? {
         return try {
             Log.d(TAG, "Fetching planet $planetId from API")
@@ -260,9 +235,7 @@ class CharacterRepositoryImpl @Inject constructor(
         }
     }
 
-    /**
-     * Сохранение персонажа в кеш
-     */
+
     private suspend fun cacheCharacter(character: Character) {
         val entity = PersonEntity(
             id = character.id,
@@ -279,7 +252,6 @@ class CharacterRepositoryImpl @Inject constructor(
         )
         database.personDao().insertPerson(entity)
 
-        // Также сохраняем фильмы в кеш, если их нет
         character.films.forEach { film ->
             if (database.filmDao().getFilmById(film.id) == null) {
                 database.filmDao().insertFilm(
@@ -295,9 +267,7 @@ class CharacterRepositoryImpl @Inject constructor(
         }
     }
 
-    /**
-     * Извлечение ID из URL
-     */
+
     private fun extractIdFromUrl(url: String): Int {
         return try {
             url.trimEnd('/').split("/").last().toInt()

@@ -28,7 +28,7 @@ class CharacterListViewModel @Inject constructor(
     val errorMessage: LiveData<String?> = _errorMessage
 
     private var allCharacters = listOf<Character>()
-    private var isDataLoaded = false  // Флаг, что данные уже загружены
+    private var isDataLoaded = false
 
     init {
         observeCharacters()
@@ -40,8 +40,6 @@ class CharacterListViewModel @Inject constructor(
                 allCharacters = characters
                 _characters.value = characters
                 _filteredCharacters.value = characters
-
-                // Данные загружены, снимаем флаг загрузки
                 if (isDataLoaded && characters.isNotEmpty()) {
                     _isLoading.value = false
                 }
@@ -51,14 +49,12 @@ class CharacterListViewModel @Inject constructor(
     }
 
     fun loadCharacters() {
-        // Если данные уже есть и не пустые, не показываем прогресс
         if (allCharacters.isNotEmpty()) {
             _isLoading.value = false
             _filteredCharacters.value = allCharacters
             return
         }
 
-        // Если данные пустые, загружаем
         viewModelScope.launch {
             _isLoading.value = true
             _errorMessage.value = null
@@ -78,7 +74,6 @@ class CharacterListViewModel @Inject constructor(
     }
 
     fun refreshCharacters() {
-        // Принудительное обновление (свайп вниз) - показываем прогресс
         viewModelScope.launch {
             _isLoading.value = true
             _errorMessage.value = null

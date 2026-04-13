@@ -56,7 +56,6 @@ class CharacterDetailFragment : Fragment() {
     private lateinit var filmAdapter: FilmAdapter
     private val viewModel: CharacterDetailViewModel by viewModels()
 
-    // Для анимации фраз
     private val starWarsPhrases = listOf(
         "СКАНИРОВАНИЕ ОКРУЖАЮЩЕГО ПРОСТРАНСТВА...",
         "ЗАТОЧКА СВЕТОВОГО МЕЧА...",
@@ -87,14 +86,12 @@ class CharacterDetailFragment : Fragment() {
         setupRecyclerView()
         observeViewModel()
 
-        // Загружаем данные
         val characterId = arguments?.getInt("characterId") ?: 0
         viewModel.loadCharacterDetails(characterId)
     }
 
     override fun onDestroyView() {
         super.onDestroyView()
-        // Останавливаем анимацию фраз при уничтожении фрагмента
         stopPhraseAnimation()
     }
 
@@ -142,7 +139,6 @@ class CharacterDetailFragment : Fragment() {
     }
 
     private fun observeViewModel() {
-        // Наблюдаем за основным состоянием загрузки
         viewModel.isLoading.observe(viewLifecycleOwner) { isLoading ->
             when (isLoading) {
                 true -> showFullScreenLoading()
@@ -150,14 +146,12 @@ class CharacterDetailFragment : Fragment() {
             }
         }
 
-        // Наблюдаем за данными персонажа
         viewModel.character.observe(viewLifecycleOwner) { character ->
             character?.let {
                 bindCharacterData(it)
             }
         }
 
-        // Наблюдаем за загрузкой фильмов
         viewModel.isFilmsLoading.observe(viewLifecycleOwner) { isLoading ->
             if (isLoading == true) {
                 showFilmsLoading()
@@ -166,7 +160,6 @@ class CharacterDetailFragment : Fragment() {
             }
         }
 
-        // Наблюдаем за списком фильмов
         viewModel.films.observe(viewLifecycleOwner) { films ->
             if (films.isNotEmpty()) {
                 showFilmsList(films)
@@ -175,7 +168,6 @@ class CharacterDetailFragment : Fragment() {
             }
         }
 
-        // Наблюдаем за ошибками
         viewModel.errorMessage.observe(viewLifecycleOwner) { error ->
             if (error != null) {
                 showError(error)
@@ -185,22 +177,17 @@ class CharacterDetailFragment : Fragment() {
         }
     }
 
-    /**
-     * Запускает анимацию смены фраз
-     */
+
     private fun startPhraseAnimation() {
         phraseIndex = 0
         loadingPhraseText.text = starWarsPhrases[phraseIndex]
 
-        // Анимация появления/исчезновения текста
         phraseRunnable = object : Runnable {
             override fun run() {
-                // Анимация исчезновения
                 val fadeOut = AlphaAnimation(1f, 0f).apply {
                     duration = 500
                 }
 
-                // Анимация появления
                 val fadeIn = AlphaAnimation(0f, 1f).apply {
                     duration = 500
                 }
@@ -209,7 +196,6 @@ class CharacterDetailFragment : Fragment() {
                     override fun onAnimationStart(animation: Animation) {}
                     override fun onAnimationRepeat(animation: Animation) {}
                     override fun onAnimationEnd(animation: Animation) {
-                        // Меняем фразу
                         phraseIndex = (phraseIndex + 1) % starWarsPhrases.size
                         loadingPhraseText.text = starWarsPhrases[phraseIndex]
                         loadingPhraseText.startAnimation(fadeIn)
@@ -217,8 +203,6 @@ class CharacterDetailFragment : Fragment() {
                 })
 
                 loadingPhraseText.startAnimation(fadeOut)
-
-                // Запускаем следующую смену через 3 секунды
                 handler.postDelayed(this, 3500)
             }
         }
@@ -226,9 +210,7 @@ class CharacterDetailFragment : Fragment() {
         handler.post(phraseRunnable!!)
     }
 
-    /**
-     * Останавливает анимацию смены фраз
-     */
+
     private fun stopPhraseAnimation() {
         phraseRunnable?.let {
             handler.removeCallbacks(it)
@@ -236,19 +218,18 @@ class CharacterDetailFragment : Fragment() {
         phraseRunnable = null
     }
 
-    // Методы управления состояниями UI
 
     private fun showFullScreenLoading() {
         loadingContainer.isVisible = true
         contentLayout.isVisible = false
         errorView.isVisible = false
-        startPhraseAnimation()  // Запускаем анимацию фраз
+        startPhraseAnimation()
     }
 
     private fun hideFullScreenLoading() {
         loadingContainer.isVisible = false
         contentLayout.isVisible = true
-        stopPhraseAnimation()   // Останавливаем анимацию фраз
+        stopPhraseAnimation()
     }
 
     private fun showError(error: String) {
@@ -295,7 +276,6 @@ class CharacterDetailFragment : Fragment() {
         birthYearValue.text = character.birthYear
         genderValue.text = character.gender.uppercase()
 
-        // Отображаем домашнюю планету
         character.homeworld?.let { planet ->
             homeworldName.text = planet.name.uppercase()
             homeworldClimate.text = planet.climate.uppercase()

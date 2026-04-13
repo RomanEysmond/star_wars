@@ -9,7 +9,6 @@ import androidx.core.content.ContextCompat
 
 object NetworkUtils {
     fun isNetworkAvailable(context: Context): Boolean {
-        // Проверяем наличие разрешения
         if (ContextCompat.checkSelfPermission(
                 context,
                 android.Manifest.permission.ACCESS_NETWORK_STATE

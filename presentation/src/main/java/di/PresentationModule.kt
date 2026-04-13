@@ -17,7 +17,6 @@ object PresentationModule {
         return "https://swapi.dev/api/"
     }
 
-    // Пример предоставления зависимости для презентационного слоя
     @Provides
     @Singleton
     fun provideCoroutineDispatcher(): CoroutineDispatcherProvider {
@@ -25,7 +24,6 @@ object PresentationModule {
     }
 }
 
-// Вспомогательный класс для предоставления диспетчеров корутин
 class CoroutineDispatcherProvider {
     val main = kotlinx.coroutines.Dispatchers.Main
     val io = kotlinx.coroutines.Dispatchers.IO
