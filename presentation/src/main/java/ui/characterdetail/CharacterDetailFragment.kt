@@ -1,13 +1,9 @@
 package com.example.starwars.presentation.ui.characterdetail
 
 import android.os.Bundle
-import android.os.Handler
-import android.os.Looper
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.view.animation.AlphaAnimation
-import android.view.animation.Animation
 import android.widget.Button
 import android.widget.LinearLayout
 import android.widget.ProgressBar
@@ -22,6 +18,8 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.example.starwars.domain.models.Character
 import com.example.starwars.presentation.R
+import com.example.starwars.presentation.utils.AnimatedProgressBarManager
+import com.example.starwars.presentation.utils.StarWarsPhrases
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
 
@@ -58,21 +56,8 @@ class CharacterDetailFragment : Fragment() {
 
     private lateinit var filmAdapter: FilmAdapter
     private val viewModel: CharacterDetailViewModel by viewModels()
+    private lateinit var animatedProgressManager: AnimatedProgressBarManager
 
-    private val starWarsPhrases = listOf(
-        "СКАНИРОВАНИЕ ОКРУЖАЮЩЕГО ПРОСТРАНСТВА...",
-        "ЗАТОЧКА СВЕТОВОГО МЕЧА...",
-        "НАСТРОЙКА СИНХРОНИЗАТОРА...",
-        "ПОИСК ИСТОЧНИКОВ СИЛЫ...",
-        "СБОР РАЗВЕДДАННЫХ...",
-        "ДЕШИФРОВКА СООБЩЕНИЯ ПОВСТАНЦЕВ...",
-        "СКАНИРОВАНИЕ ОКРУЖАЮЩЕГО ПРОСТРАНСТВА...",
-        "ЗАГРУЗКА БОЕВЫХ ПРОТОКОЛОВ..."
-    )
-
-    private var phraseIndex = 0
-    private var handler = Handler(Looper.getMainLooper())
-    private var phraseRunnable: Runnable? = null
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -86,6 +71,7 @@ class CharacterDetailFragment : Fragment() {
         super.onViewCreated(view, savedInstanceState)
 
         initViews(view)
+        setupAnimatedProgressBar()
         setupRecyclerView()
         observeViewModel()
 
@@ -95,7 +81,7 @@ class CharacterDetailFragment : Fragment() {
 
     override fun onDestroyView() {
         super.onDestroyView()
-        stopPhraseAnimation()
+        animatedProgressManager.cleanup()
     }
 
     private fun initViews(view: View) {
@@ -130,6 +116,14 @@ class CharacterDetailFragment : Fragment() {
             val characterId = arguments?.getInt("characterId") ?: 0
             viewModel.loadCharacterDetails(characterId)
         }
+    }
+
+    private fun setupAnimatedProgressBar() {
+        animatedProgressManager = AnimatedProgressBarManager(
+            loadingContainer = loadingContainer,
+            loadingPhraseText = loadingPhraseText,
+            phrases = StarWarsPhrases.loadingPhrases
+        )
     }
 
     private fun setupRecyclerView() {
@@ -179,64 +173,22 @@ class CharacterDetailFragment : Fragment() {
         }
     }
 
-    private fun startPhraseAnimation() {
-        phraseIndex = 0
-        loadingPhraseText.text = starWarsPhrases[phraseIndex]
-
-        phraseRunnable = object : Runnable {
-            override fun run() {
-                val fadeOut = AlphaAnimation(1f, 0f).apply {
-                    duration = 500
-                }
-
-                val fadeIn = AlphaAnimation(0f, 1f).apply {
-                    duration = 500
-                }
-
-                fadeOut.setAnimationListener(object : Animation.AnimationListener {
-                    override fun onAnimationStart(animation: Animation) {}
-                    override fun onAnimationRepeat(animation: Animation) {}
-                    override fun onAnimationEnd(animation: Animation) {
-                        phraseIndex = (phraseIndex + 1) % starWarsPhrases.size
-                        loadingPhraseText.text = starWarsPhrases[phraseIndex]
-                        loadingPhraseText.startAnimation(fadeIn)
-                    }
-                })
-
-                loadingPhraseText.startAnimation(fadeOut)
-                handler.postDelayed(this, 3500)
-            }
-        }
-
-        handler.post(phraseRunnable!!)
-    }
-
-    private fun stopPhraseAnimation() {
-        phraseRunnable?.let {
-            handler.removeCallbacks(it)
-        }
-        phraseRunnable = null
-    }
-
     private fun showFullScreenLoading() {
-        loadingContainer.isVisible = true
         contentLayout.isVisible = false
         errorView.isVisible = false
-        startPhraseAnimation()
+        animatedProgressManager.start()
     }
 
     private fun hideFullScreenLoading() {
-        loadingContainer.isVisible = false
+        animatedProgressManager.stop()
         contentLayout.isVisible = true
-        stopPhraseAnimation()
     }
 
     private fun showError(error: String) {
-        loadingContainer.isVisible = false
+        animatedProgressManager.stop()
         contentLayout.isVisible = false
         errorView.isVisible = true
         errorText.text = error
-        stopPhraseAnimation()
     }
 
     private fun hideError() {
