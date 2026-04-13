@@ -32,12 +32,10 @@ class CharacterRepositoryImpl @Inject constructor(
 
     override fun getAllCharacters(): Flow<List<Character>> {
         return flow {
-            // Проверяем, есть ли данные в базе
             val count = database.personDao().getCount()
 
             if (count == 0) {
                 Log.d(TAG, "Database is empty, loading from API")
-                // Загружаем данные из API при первом запуске
                 fetchAndCacheCharacters().onFailure { exception ->
                     Log.e(TAG, "Failed to load initial data", exception)
                 }
@@ -45,7 +43,6 @@ class CharacterRepositoryImpl @Inject constructor(
                 Log.d(TAG, "Database has $count characters, using cached data")
             }
 
-            // Теперь наблюдаем за изменениями в базе
             database.personDao().getAllPersons().collect { entities ->
                 emit(entities.map { it.toDomain() })
             }

@@ -152,31 +152,26 @@ class CharacterDetailFragment : Fragment() {
     }
 
     private fun updateUI(uiState: CharacterDetailUiState) {
-        // Update loading state
         if (uiState.isLoading) {
             showFullScreenLoading()
         } else {
             hideFullScreenLoading()
         }
 
-        // Update character
         uiState.character?.let { bindCharacterData(it) }
 
-        // Update films loading
         if (uiState.isFilmsLoading) {
             showFilmsLoading()
         } else {
             hideFilmsLoading()
         }
 
-        // Update films list
         if (uiState.films.isNotEmpty()) {
             showFilmsList(uiState.films)
         } else if (!uiState.isFilmsLoading && uiState.character != null) {
             showEmptyFilms()
         }
 
-        // Update error
         if (uiState.errorMessage != null) {
             showError(uiState.errorMessage)
         } else {

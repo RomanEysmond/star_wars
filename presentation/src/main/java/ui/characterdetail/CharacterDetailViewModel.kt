@@ -18,7 +18,6 @@ class CharacterDetailViewModel @Inject constructor(
     private val _uiState = MutableStateFlow(CharacterDetailUiState())
     val uiState: StateFlow<CharacterDetailUiState> = _uiState.asStateFlow()
 
-    // Для совместимости с существующим кодом (опционально)
     val character: StateFlow<Character?> = _uiState
         .map { it.character }
         .stateIn(
@@ -117,7 +116,6 @@ class CharacterDetailViewModel @Inject constructor(
     }
 }
 
-// UI State класс
 data class CharacterDetailUiState(
     val character: Character? = null,
     val films: List<Film> = emptyList(),

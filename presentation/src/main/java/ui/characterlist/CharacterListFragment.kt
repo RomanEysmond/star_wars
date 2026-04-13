@@ -191,10 +191,8 @@ class CharacterListFragment : Fragment() {
     }
 
     private fun updateUI(uiState: CharacterListUiState) {
-        // Update filtered characters
         adapter.submitList(uiState.filteredCharacters)
 
-        // Update loading state
         when {
             uiState.isLoading && adapter.currentList.isEmpty() -> showFullScreenLoading()
             uiState.isLoading -> swipeRefresh.isRefreshing = true
@@ -207,7 +205,6 @@ class CharacterListFragment : Fragment() {
             }
         }
 
-        // Update empty view
         if (uiState.filteredCharacters.isEmpty() && !uiState.isLoading) {
             emptyView.isVisible = true
             recyclerView.isVisible = false
@@ -216,7 +213,6 @@ class CharacterListFragment : Fragment() {
             recyclerView.isVisible = true
         }
 
-        // Update error
         if (uiState.errorMessage != null && adapter.currentList.isEmpty()) {
             showError(uiState.errorMessage)
         } else {
