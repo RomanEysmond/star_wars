@@ -47,6 +47,8 @@ class CharacterListViewModel @Inject constructor(
 
     init {
         observeCharacters()
+        // Автоматически загружаем данные при создании ViewModel
+        loadCharacters()
     }
 
     private fun observeCharacters() {
@@ -75,6 +77,7 @@ class CharacterListViewModel @Inject constructor(
     }
 
     fun loadCharacters() {
+        // Если данные уже загружены, не загружаем снова
         if (_uiState.value.isDataLoaded && allCharacters.isNotEmpty()) {
             return
         }
@@ -82,22 +85,22 @@ class CharacterListViewModel @Inject constructor(
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true, errorMessage = null) }
 
-            getCharactersUseCase.refresh()
-                .onSuccess {
-                    _uiState.update { it.copy(isLoading = false) }
+            val result = getCharactersUseCase.refresh()
+            result.onSuccess {
+                // Данные будут автоматически получены через observeCharacters()
+                // Не нужно обновлять isLoading здесь, так как observeCharacters() обновит его
+            }.onFailure { exception ->
+                _uiState.update { state ->
+                    state.copy(
+                        isLoading = false,
+                        errorMessage = if (allCharacters.isEmpty()) {
+                            "Не удалось загрузить данные. Проверьте подключение к интернету."
+                        } else {
+                            null
+                        }
+                    )
                 }
-                .onFailure { exception ->
-                    _uiState.update { state ->
-                        state.copy(
-                            isLoading = false,
-                            errorMessage = if (allCharacters.isEmpty()) {
-                                "Не удалось загрузить данные. Проверьте подключение к интернету."
-                            } else {
-                                null
-                            }
-                        )
-                    }
-                }
+            }
         }
     }
 
@@ -105,18 +108,17 @@ class CharacterListViewModel @Inject constructor(
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true, errorMessage = null) }
 
-            getCharactersUseCase.refresh()
-                .onSuccess {
-                    _uiState.update { it.copy(isLoading = false) }
+            val result = getCharactersUseCase.refresh()
+            result.onSuccess {
+                // Данные будут автоматически обновлены через observeCharacters()
+            }.onFailure { exception ->
+                _uiState.update { state ->
+                    state.copy(
+                        isLoading = false,
+                        errorMessage = "Не удалось обновить данные. Проверьте подключение к интернету."
+                    )
                 }
-                .onFailure { exception ->
-                    _uiState.update { state ->
-                        state.copy(
-                            isLoading = false,
-                            errorMessage = "Не удалось обновить данные. Проверьте подключение к интернету."
-                        )
-                    }
-                }
+            }
         }
     }
 

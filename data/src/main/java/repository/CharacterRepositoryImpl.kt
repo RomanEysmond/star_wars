@@ -11,6 +11,8 @@ import com.example.starwars.domain.models.Film
 import com.example.starwars.domain.models.Planet
 import com.example.starwars.domain.repository.CharacterRepository
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
@@ -29,13 +31,30 @@ class CharacterRepositoryImpl @Inject constructor(
     }
 
     override fun getAllCharacters(): Flow<List<Character>> {
-        return database.personDao().getAllPersons().map { entities ->
-            entities.map { it.toDomain() }
+        return flow {
+            // Проверяем, есть ли данные в базе
+            val count = database.personDao().getCount()
+
+            if (count == 0) {
+                Log.d(TAG, "Database is empty, loading from API")
+                // Загружаем данные из API при первом запуске
+                fetchAndCacheCharacters().onFailure { exception ->
+                    Log.e(TAG, "Failed to load initial data", exception)
+                }
+            } else {
+                Log.d(TAG, "Database has $count characters, using cached data")
+            }
+
+            // Теперь наблюдаем за изменениями в базе
+            database.personDao().getAllPersons().collect { entities ->
+                emit(entities.map { it.toDomain() })
+            }
         }
     }
 
     override suspend fun fetchAndCacheCharacters(): Result<Unit> {
         return try {
+            Log.d(TAG, "Fetching characters from API")
             val response = api.getAllPeople(page = 1)
             val persons = response.results.map { person ->
                 val id = extractIdFromUrl(person.url)
@@ -54,8 +73,10 @@ class CharacterRepositoryImpl @Inject constructor(
                 )
             }
             database.personDao().insertAllPersons(persons)
+            Log.d(TAG, "Successfully cached ${persons.size} characters")
             Result.success(Unit)
         } catch (e: Exception) {
+            Log.e(TAG, "Error fetching characters", e)
             e.printStackTrace()
             Result.failure(e)
         }
