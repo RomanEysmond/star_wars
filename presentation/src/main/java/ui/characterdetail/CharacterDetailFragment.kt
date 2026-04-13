@@ -15,12 +15,15 @@ import android.widget.TextView
 import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.example.starwars.domain.models.Character
 import com.example.starwars.presentation.R
 import dagger.hilt.android.AndroidEntryPoint
-import kotlinx.coroutines.*
+import kotlinx.coroutines.launch
 
 @AndroidEntryPoint
 class CharacterDetailFragment : Fragment() {
@@ -139,44 +142,47 @@ class CharacterDetailFragment : Fragment() {
     }
 
     private fun observeViewModel() {
-        viewModel.isLoading.observe(viewLifecycleOwner) { isLoading ->
-            when (isLoading) {
-                true -> showFullScreenLoading()
-                false -> hideFullScreenLoading()
-            }
-        }
-
-        viewModel.character.observe(viewLifecycleOwner) { character ->
-            character?.let {
-                bindCharacterData(it)
-            }
-        }
-
-        viewModel.isFilmsLoading.observe(viewLifecycleOwner) { isLoading ->
-            if (isLoading == true) {
-                showFilmsLoading()
-            } else {
-                hideFilmsLoading()
-            }
-        }
-
-        viewModel.films.observe(viewLifecycleOwner) { films ->
-            if (films.isNotEmpty()) {
-                showFilmsList(films)
-            } else if (viewModel.isFilmsLoading.value == false && viewModel.character.value != null) {
-                showEmptyFilms()
-            }
-        }
-
-        viewModel.errorMessage.observe(viewLifecycleOwner) { error ->
-            if (error != null) {
-                showError(error)
-            } else {
-                hideError()
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                viewModel.uiState.collect { uiState ->
+                    updateUI(uiState)
+                }
             }
         }
     }
 
+    private fun updateUI(uiState: CharacterDetailUiState) {
+        // Update loading state
+        if (uiState.isLoading) {
+            showFullScreenLoading()
+        } else {
+            hideFullScreenLoading()
+        }
+
+        // Update character
+        uiState.character?.let { bindCharacterData(it) }
+
+        // Update films loading
+        if (uiState.isFilmsLoading) {
+            showFilmsLoading()
+        } else {
+            hideFilmsLoading()
+        }
+
+        // Update films list
+        if (uiState.films.isNotEmpty()) {
+            showFilmsList(uiState.films)
+        } else if (!uiState.isFilmsLoading && uiState.character != null) {
+            showEmptyFilms()
+        }
+
+        // Update error
+        if (uiState.errorMessage != null) {
+            showError(uiState.errorMessage)
+        } else {
+            hideError()
+        }
+    }
 
     private fun startPhraseAnimation() {
         phraseIndex = 0
@@ -210,14 +216,12 @@ class CharacterDetailFragment : Fragment() {
         handler.post(phraseRunnable!!)
     }
 
-
     private fun stopPhraseAnimation() {
         phraseRunnable?.let {
             handler.removeCallbacks(it)
         }
         phraseRunnable = null
     }
-
 
     private fun showFullScreenLoading() {
         loadingContainer.isVisible = true

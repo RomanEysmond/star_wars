@@ -1,12 +1,11 @@
 package com.example.starwars.presentation.ui.characterlist
 
-import androidx.lifecycle.LiveData
-import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.starwars.domain.models.Character
 import com.example.starwars.domain.usecases.GetCharactersUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -15,20 +14,36 @@ class CharacterListViewModel @Inject constructor(
     private val getCharactersUseCase: GetCharactersUseCase
 ) : ViewModel() {
 
-    private val _characters = MutableLiveData<List<Character>>()
-    val characters: LiveData<List<Character>> = _characters
+    // UI state
+    private val _uiState = MutableStateFlow(CharacterListUiState())
+    val uiState: StateFlow<CharacterListUiState> = _uiState.asStateFlow()
 
-    private val _filteredCharacters = MutableLiveData<List<Character>>()
-    val filteredCharacters: LiveData<List<Character>> = _filteredCharacters
+    // Для совместимости с существующим кодом (опционально)
+    val filteredCharacters: StateFlow<List<Character>> = _uiState
+        .map { it.filteredCharacters }
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = emptyList()
+        )
 
-    private val _isLoading = MutableLiveData<Boolean>()
-    val isLoading: LiveData<Boolean> = _isLoading
+    val isLoading: StateFlow<Boolean> = _uiState
+        .map { it.isLoading }
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = false
+        )
 
-    private val _errorMessage = MutableLiveData<String?>()
-    val errorMessage: LiveData<String?> = _errorMessage
+    val errorMessage: StateFlow<String?> = _uiState
+        .map { it.errorMessage }
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = null
+        )
 
     private var allCharacters = listOf<Character>()
-    private var isDataLoaded = false
 
     init {
         observeCharacters()
@@ -36,66 +51,92 @@ class CharacterListViewModel @Inject constructor(
 
     private fun observeCharacters() {
         viewModelScope.launch {
-            getCharactersUseCase().collect { characters ->
-                allCharacters = characters
-                _characters.value = characters
-                _filteredCharacters.value = characters
-                if (isDataLoaded && characters.isNotEmpty()) {
-                    _isLoading.value = false
+            getCharactersUseCase()
+                .catch { exception ->
+                    _uiState.update { state ->
+                        state.copy(
+                            isLoading = false,
+                            errorMessage = exception.message ?: "Unknown error"
+                        )
+                    }
                 }
-                isDataLoaded = true
-            }
+                .collect { characters ->
+                    allCharacters = characters
+                    _uiState.update { state ->
+                        state.copy(
+                            characters = characters,
+                            filteredCharacters = characters,
+                            isLoading = false,
+                            isDataLoaded = true
+                        )
+                    }
+                }
         }
     }
 
     fun loadCharacters() {
-        if (allCharacters.isNotEmpty()) {
-            _isLoading.value = false
-            _filteredCharacters.value = allCharacters
+        if (_uiState.value.isDataLoaded && allCharacters.isNotEmpty()) {
             return
         }
 
         viewModelScope.launch {
-            _isLoading.value = true
-            _errorMessage.value = null
+            _uiState.update { it.copy(isLoading = true, errorMessage = null) }
 
-            val result = getCharactersUseCase.refresh()
-            result.onSuccess {
-                _isLoading.value = false
-            }.onFailure {
-                _isLoading.value = false
-                _errorMessage.value = if (allCharacters.isEmpty()) {
-                    "Не удалось загрузить данные. Проверьте подключение к интернету."
-                } else {
-                    null
+            getCharactersUseCase.refresh()
+                .onSuccess {
+                    _uiState.update { it.copy(isLoading = false) }
                 }
-            }
+                .onFailure { exception ->
+                    _uiState.update { state ->
+                        state.copy(
+                            isLoading = false,
+                            errorMessage = if (allCharacters.isEmpty()) {
+                                "Не удалось загрузить данные. Проверьте подключение к интернету."
+                            } else {
+                                null
+                            }
+                        )
+                    }
+                }
         }
     }
 
     fun refreshCharacters() {
         viewModelScope.launch {
-            _isLoading.value = true
-            _errorMessage.value = null
+            _uiState.update { it.copy(isLoading = true, errorMessage = null) }
 
-            val result = getCharactersUseCase.refresh()
-            result.onSuccess {
-                _isLoading.value = false
-            }.onFailure {
-                _isLoading.value = false
-                _errorMessage.value = "Не удалось обновить данные. Проверьте подключение к интернету."
-            }
+            getCharactersUseCase.refresh()
+                .onSuccess {
+                    _uiState.update { it.copy(isLoading = false) }
+                }
+                .onFailure { exception ->
+                    _uiState.update { state ->
+                        state.copy(
+                            isLoading = false,
+                            errorMessage = "Не удалось обновить данные. Проверьте подключение к интернету."
+                        )
+                    }
+                }
         }
     }
 
     fun filterCharacters(query: String) {
-        if (query.isEmpty()) {
-            _filteredCharacters.value = allCharacters
+        val filtered = if (query.isEmpty()) {
+            allCharacters
         } else {
-            val filtered = allCharacters.filter {
+            allCharacters.filter {
                 it.name.contains(query, ignoreCase = true)
             }
-            _filteredCharacters.value = filtered
         }
+        _uiState.update { it.copy(filteredCharacters = filtered) }
     }
 }
+
+// UI State класс
+data class CharacterListUiState(
+    val characters: List<Character> = emptyList(),
+    val filteredCharacters: List<Character> = emptyList(),
+    val isLoading: Boolean = false,
+    val errorMessage: String? = null,
+    val isDataLoaded: Boolean = false
+)

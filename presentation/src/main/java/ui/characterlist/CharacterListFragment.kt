@@ -18,12 +18,16 @@ import android.widget.TextView
 import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
 import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
 import com.example.starwars.presentation.R
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.launch
 
 @AndroidEntryPoint
 class CharacterListFragment : Fragment() {
@@ -140,7 +144,6 @@ class CharacterListFragment : Fragment() {
         }
     }
 
-
     private fun startPhraseAnimation() {
         phraseIndex = 0
         loadingPhraseText.text = starWarsPhrases[phraseIndex]
@@ -168,7 +171,6 @@ class CharacterListFragment : Fragment() {
         handler.post(phraseRunnable!!)
     }
 
-
     private fun stopPhraseAnimation() {
         phraseRunnable?.let {
             handler.removeCallbacks(it)
@@ -177,64 +179,65 @@ class CharacterListFragment : Fragment() {
     }
 
     private fun observeViewModel() {
-        viewModel.filteredCharacters.observe(viewLifecycleOwner) { characters ->
-            adapter.submitList(characters)
-
-            if (characters.isEmpty() && viewModel.isLoading.value != true) {
-                emptyView.isVisible = true
-                recyclerView.isVisible = false
-            } else if (characters.isNotEmpty()) {
-                emptyView.isVisible = false
-                recyclerView.isVisible = true
-            }
-        }
-
-        viewModel.isLoading.observe(viewLifecycleOwner) { isLoading ->
-            when (isLoading) {
-                true -> {
-                    if (adapter.currentList.isEmpty()) {
-                        showFullScreenLoading()
-                    } else {
-                        swipeRefresh.isRefreshing = true
-                        hideFullScreenLoading()
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                launch {
+                    viewModel.uiState.collect { uiState ->
+                        updateUI(uiState)
                     }
                 }
-                false -> {
-                    hideFullScreenLoading()
-                    swipeRefresh.isRefreshing = false
-                    if (adapter.currentList.isNotEmpty()) {
-                        recyclerView.isVisible = true
-                    }
-                }
-            }
-        }
-
-        viewModel.errorMessage.observe(viewLifecycleOwner) { error ->
-            if (error != null && adapter.currentList.isEmpty()) {
-                showError(error)
-            } else {
-                hideError()
             }
         }
     }
 
+    private fun updateUI(uiState: CharacterListUiState) {
+        // Update filtered characters
+        adapter.submitList(uiState.filteredCharacters)
+
+        // Update loading state
+        when {
+            uiState.isLoading && adapter.currentList.isEmpty() -> showFullScreenLoading()
+            uiState.isLoading -> swipeRefresh.isRefreshing = true
+            else -> {
+                hideFullScreenLoading()
+                swipeRefresh.isRefreshing = false
+                if (adapter.currentList.isNotEmpty()) {
+                    recyclerView.isVisible = true
+                }
+            }
+        }
+
+        // Update empty view
+        if (uiState.filteredCharacters.isEmpty() && !uiState.isLoading) {
+            emptyView.isVisible = true
+            recyclerView.isVisible = false
+        } else if (uiState.filteredCharacters.isNotEmpty()) {
+            emptyView.isVisible = false
+            recyclerView.isVisible = true
+        }
+
+        // Update error
+        if (uiState.errorMessage != null && adapter.currentList.isEmpty()) {
+            showError(uiState.errorMessage)
+        } else {
+            hideError()
+        }
+    }
 
     private fun showFullScreenLoading() {
         loadingContainer.isVisible = true
-        progressBar.isVisible = false  // Скрываем старый прогресс-бар
+        progressBar.isVisible = false
         recyclerView.isVisible = false
         emptyView.isVisible = false
         errorView.isVisible = false
         startPhraseAnimation()
     }
 
-
     private fun hideFullScreenLoading() {
         loadingContainer.isVisible = false
         progressBar.isVisible = false
         stopPhraseAnimation()
     }
-
 
     private fun showError(error: String) {
         loadingContainer.isVisible = false

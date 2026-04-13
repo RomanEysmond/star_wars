@@ -1,13 +1,12 @@
 package com.example.starwars.presentation.ui.characterdetail
 
-import androidx.lifecycle.LiveData
-import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.starwars.domain.models.Character
 import com.example.starwars.domain.models.Film
 import com.example.starwars.domain.usecases.GetCharacterDetailUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -16,37 +15,78 @@ class CharacterDetailViewModel @Inject constructor(
     private val getCharacterDetailUseCase: GetCharacterDetailUseCase
 ) : ViewModel() {
 
-    private val _character = MutableLiveData<Character?>()
-    val character: LiveData<Character?> = _character
+    private val _uiState = MutableStateFlow(CharacterDetailUiState())
+    val uiState: StateFlow<CharacterDetailUiState> = _uiState.asStateFlow()
 
-    private val _isLoading = MutableLiveData<Boolean>()
-    val isLoading: LiveData<Boolean> = _isLoading
+    // Для совместимости с существующим кодом (опционально)
+    val character: StateFlow<Character?> = _uiState
+        .map { it.character }
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = null
+        )
 
-    private val _errorMessage = MutableLiveData<String?>()
-    val errorMessage: LiveData<String?> = _errorMessage
+    val isLoading: StateFlow<Boolean> = _uiState
+        .map { it.isLoading }
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = false
+        )
 
-    private val _films = MutableLiveData<List<Film>>()
-    val films: LiveData<List<Film>> = _films
+    val errorMessage: StateFlow<String?> = _uiState
+        .map { it.errorMessage }
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = null
+        )
 
-    private val _isFilmsLoading = MutableLiveData<Boolean>()
-    val isFilmsLoading: LiveData<Boolean> = _isFilmsLoading
+    val films: StateFlow<List<Film>> = _uiState
+        .map { it.films }
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = emptyList()
+        )
+
+    val isFilmsLoading: StateFlow<Boolean> = _uiState
+        .map { it.isFilmsLoading }
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = false
+        )
 
     fun loadCharacterDetails(characterId: Int) {
         viewModelScope.launch {
-            _isLoading.value = true
-            _isFilmsLoading.value = true
-            _errorMessage.value = null
+            _uiState.update { state ->
+                state.copy(
+                    isLoading = true,
+                    isFilmsLoading = true,
+                    errorMessage = null
+                )
+            }
 
             val result = getCharacterDetailUseCase(characterId)
 
             result.onSuccess { character ->
-                _character.value = character
+                _uiState.update { state ->
+                    state.copy(
+                        character = character,
+                        isLoading = false
+                    )
+                }
                 loadFilms(character.films)
-
             }.onFailure { exception ->
-                _isLoading.value = false
-                _isFilmsLoading.value = false
-                _errorMessage.value = "Не удалось загрузить данные о персонаже. Проверьте подключение к интернету."
+                _uiState.update { state ->
+                    state.copy(
+                        isLoading = false,
+                        isFilmsLoading = false,
+                        errorMessage = "Не удалось загрузить данные о персонаже. Проверьте подключение к интернету."
+                    )
+                }
             }
         }
     }
@@ -54,17 +94,34 @@ class CharacterDetailViewModel @Inject constructor(
     private fun loadFilms(filmsList: List<Film>) {
         viewModelScope.launch {
             if (filmsList.isEmpty()) {
-                _films.value = emptyList()
-                _isFilmsLoading.value = false
-                _isLoading.value = false  //
+                _uiState.update { state ->
+                    state.copy(
+                        films = emptyList(),
+                        isFilmsLoading = false,
+                        isLoading = false
+                    )
+                }
                 return@launch
             }
 
             kotlinx.coroutines.delay(300)
 
-            _films.value = filmsList
-            _isFilmsLoading.value = false
-            _isLoading.value = false
+            _uiState.update { state ->
+                state.copy(
+                    films = filmsList,
+                    isFilmsLoading = false,
+                    isLoading = false
+                )
+            }
         }
     }
 }
+
+// UI State класс
+data class CharacterDetailUiState(
+    val character: Character? = null,
+    val films: List<Film> = emptyList(),
+    val isLoading: Boolean = false,
+    val isFilmsLoading: Boolean = false,
+    val errorMessage: String? = null
+)
